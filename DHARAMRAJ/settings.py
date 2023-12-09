@@ -40,8 +40,7 @@ INSTALLED_APPS = [
     'Admin',
     'Developer',
     'crispy_bootstrap5',
-    'crispy_forms',
-    'dbbackup',
+    'crispy_forms', 
 ]
  
 MIDDLEWARE = [

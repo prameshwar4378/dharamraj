@@ -1,0 +1,364 @@
+{% extends "admin_base.html" %}
+{% load crispy_forms_tags %}
+{% block containt %}
+<style>
+    .radio-group label {
+        display: inline-block;
+        padding: 12px 30px;
+        margin-top: 5px;
+        background-color: #ffffff;
+        color: #960000;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+
+    .radio-group input[name="transaction-type-create"] {
+        display: none;
+    }
+
+    .radio-group input[name="transaction-type-create"]:checked+label {
+        background: -webkit-gradient(linear, left top, right top, from(#AD278B), to(#581C49));
+        color: #fff;
+
+    }
+    .radio-group input[name="transaction-type-update"] {
+        display: none;
+    }
+
+    .radio-group input[name="transaction-type-update"]:checked+label {
+        background: -webkit-gradient(linear, left top, right top, from(#AD278B), to(#581C49));
+        color: #fff;
+
+    }
+</style>
+
+<div id="page-loader">
+    <div class="loader"></div>
+</div>
+<div class="page-header">
+    <h3 class="page-title">
+        <span class="page-title-icon bg-gradient-primary text-white me-2">
+            <i class="mdi mdi-account"></i>
+        </span> Transactions
+    </h3>
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb">
+            <li class=" ">
+                <span class=" bg-gradient-primary buttton " data-toggle="modal" data-target="#new_transaction"
+                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;">New Transaction</span>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="container" style="max-width:97%;">
+                <div class="text-lg-end text-start"> <!-- Use text-lg-end for right alignment in large screens -->
+                    <a href="#" class="btn btn-table-header-buttons" data-toggle="modal" data-target="#filter_data"><i class="mdi mdi-filter"></i> Filter</a>
+                    <a href="#" class="btn btn-table-header-buttons" data-toggle="modal" data-target="#export_excel"><i class="mdi mdi-file-excel"></i> Excel</a>
+                    <a href="#" class="btn btn-table-header-buttons" data-toggle="modal" data-target="#export_pdf"><i class="mdi mdi-file-pdf"></i> PDF</a> 
+                    <a href="{% url "admin_troubleshoot_transactions_for_balance" %}" class="btn btn-table-header-buttons"><i class="mdi mdi-checkbox-marked-circle"></i> Troubleshoot</a> 
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<hr>
+
+
+<div class="modal fade" id="new_transaction" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">New Transaction</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <form method="post" id="transaction_creation_form" action="{% url "admin_create_transaction" %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-sm-6">
+                                {{create_transaction_fm.dealer|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                {{create_transaction_fm.payment_mode|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                {{create_transaction_fm.amount|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="payment_status">Payment Method *</label>
+                                <div class="radio-group mt-1" name="payment_status">
+                                    <input type="radio" id="credit_create" name="transaction-type-create" value="credit" required checked>
+                                    <label for="credit_create" style="border-radius: 30px 0 0 30px;">Credit</label>
+                                
+                                    <input type="radio" id="debit_create" name="transaction-type-create" value="debit">
+                                    <label for="debit_create" style="border-radius: 0 30px 30px 0;">Debit</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-12">
+                                {{create_transaction_fm.remark|as_crispy_field}}
+                            </div>
+                        </div>
+                        <center>
+                            <input type="submit" id="btnCreateSubmit" onclick="buttonDisabled()"
+                                value="Create Transaction" class="btn bg-gradient-primary text-light"></input>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade" id="filter_data" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Filter Records</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                
+                    <form action="" method="GET">
+                        {% csrf_token %}
+                         <div class="row">
+                            <div class="col-sm-6">{{filter.form.dealer|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.is_credit|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.start_date|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.end_date|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.balance__gte|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.balance__lte|as_crispy_field}}</div>
+                         </div>
+                        <div class="row text-center">
+                            <div class="col-sm-12 py-2 text-center"><input type="submit" value="Apply Filter" class="btn btn-primary bg-gradient-primary mt-4" style="width:30%"></div>            
+                        </div>
+                        </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="export_pdf" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Export PDF</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <form method="GET" action="{% url "admin_export_transaction_list_pdf" %}">
+                        {% csrf_token %}
+                         
+                        <div class="row">
+                            <div class="col-sm-6">{{filter.form.dealer|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.is_credit|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.start_date|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.end_date|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.balance__gte|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.balance__lte|as_crispy_field}}</div>
+                         </div>
+                        <div class="row text-center">
+                            <div class="col-sm-12 py-2 text-center"><input type="submit" value="Export PDF" class="btn btn-primary bg-gradient-primary mt-4" style="width:30%"></div>            
+                        </div>
+                        </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="export_excel" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Export Excel</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <form method="GET" action="{% url "admin_export_transaction_list_csv" %}">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-sm-6">{{filter.form.dealer|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.is_credit|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.start_date|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.end_date|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.balance__gte|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.balance__lte|as_crispy_field}}</div>
+                         </div> 
+                        <div class="row text-center">
+                            <div class="col-sm-12 py-2 text-center"><input type="submit" value="Export CSV" class="btn btn-primary bg-gradient-primary mt-4" style="width:30%"></div>            
+                        </div>
+                        </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container mt-3" style=" overflow:scroll;">
+    <table id="example" class="table table-striped " style="overflow:scroll; width:100%;min-width: max-content;">
+        <thead>
+            <tr class="bg-gradient-primary text-light ">
+                <th scope="col" class="text-center text-white" style="">Sr.No</th>
+                <th scope="col" class="text-center text-white" style="">Dealer Name</th>
+                <th scope="col" class="text-center text-white" style="">Transaction Date</th>
+                <th scope="col" class="text-center text-white" style="">Credit/Debit</th>
+                <th scope="col" class="text-center text-white" style="">Transaction Amount</th>
+                <th scope="col" class="text-center text-white" style="">Balance</th>
+                <th scope="col" class="text-center text-white" style="">Invoice Number</th> 
+                <th scope="col" class="text-center text-white" style="">Action</th>
+            </tr>
+        </thead>
+        <tbody id="dealer_table_body">
+            {% if transaction_rec %}
+            {% for r in transaction_rec %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{r.dealer}}</td>
+                <td class="text-center">{{r.transaction_date}}</td>
+                <td class="text-center">{% if r.is_credit %} <span style="background:green;color:white;">Credit</span> {% else %} <span style="background:red;color:white;">Debit</span>{% endif %}</td>
+                <td class="text-center">{{r.amount}}</td>
+                <td class="text-center">{% if r.balance < 0 %}<span style="background:red;color:white;">{{r.balance}} {% else %}{{r.balance}}{% endif %} </td>
+                <td class="text-center">{% if r.invoice_number %}{{r.invoice_number}}{% else %}---{% endif %}</td> 
+                <td>
+                    <center>
+                        <a href="#" class="btn btn-success px-3" data-toggle="modal" data-target="#update_transaction"
+                            onclick="update_dealer('{{r.id}}','{{r.dealer.id}}','{{r.payment_mode}}','{{r.is_credit}}','{{r.amount}}','{{r.remark}}')"><i
+                                class="mdi mdi-pencil"></i></a>
+
+                                <a href="{% url "admin_delete_transaction" r.id %}" class="btn btn-danger px-3"><i
+                                        class="mdi mdi-delete"></i></a>
+                    </center>
+                </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+ 
+<div class="modal fade" id="update_transaction" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Update Transaction</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <form method="post" id="transaction_update_form" action="{% url "admin_update_transaction" %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-sm-6">
+                                {{update_transaction_fm.dealer|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                {{update_transaction_fm.payment_mode|as_crispy_field}}
+                            </div> 
+                            <div class="col-sm-6">
+                                {{update_transaction_fm.amount|as_crispy_field}}
+                            </div> 
+                            <div class="col-sm-6">
+                                <label for="payment_status">Payment Method *</label>
+                                <div class="radio-group mt-1" name="update_payment_status">
+                                    <input type="radio" id="credit_update" name="transaction-type-update" value="credit" required checked>
+                                    <label for="credit_update" style="border-radius: 30px 0 0 30px;">Credit</label>
+                                    <input type="radio" id="debit_update" name="transaction-type-update" value="debit">
+                                    <label for="debit_update" style="border-radius: 0 30px 30px 0;">Debit</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-12">
+                                {{update_transaction_fm.remark|as_crispy_field}}
+                            </div>
+                            <input type="hidden" name="txt_id" id="txt_id">
+                        </div>
+                        <center>
+                            <input type="submit" value="Update Transaction" id="btnUpdateSubmit" onclick="buttonDisabled()"
+                                class="btn bg-gradient-primary text-light"></input>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function update_dealer(id, dealer, payment_mode, is_credit, amount, remark) {
+        // Assuming your form has an id attribute set to "product_update_form"
+        var form = document.getElementById("transaction_update_form");
+        // Update form elements with the provided values
+
+        var id_val = form.elements["txt_id"];
+        id_val.value = id;
+        
+        var dealer_val = form.elements["id_dealer"];
+        dealer_val.value = dealer;
+
+        var payment_mode_val = form.elements["id_payment_mode"];
+        payment_mode_val.value = payment_mode;
+
+        var amount_val = form.elements["id_amount"];
+        amount_val.value = amount;
+
+        var remark_val = form.elements["id_remark"];
+        remark_val.value = remark;
+
+        if (is_credit === "True") {  
+            var is_credit = true;  
+        } 
+        else {  
+            var is_credit = false;  
+        }
+  // replace with your actual value
+        var remark = "Credit Remark";  // replace with your actual value
+        
+        // Select the radio buttons
+        var credit_radio = document.getElementById("credit_update");
+        var debit_radio = document.getElementById("debit_update");
+        
+        // Set the checked property based on the value of is_credit
+        credit_radio.checked = is_credit;
+        debit_radio.checked = !is_credit;  // set the opposite value for debit
+        
+        // Set the remark value based on is_credit
+        var remark_val = document.getElementById("id_remark");  // replace with the actual ID
+        remark_val.value = is_credit ? "Credit Remark" : "Debit Remark";
+
+
+    }
+</script>
+
+{% endblock containt %}

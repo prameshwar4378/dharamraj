@@ -1,0 +1,209 @@
+{% extends "admin_base.html" %}
+{% load crispy_forms_tags %}
+{% block containt %}
+<style>
+    .card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        word-wrap: break-word;
+        background-color: white;
+        background-clip: border-box;
+        border: 0px solid rgba(0, 0, 0, 0);
+        border-radius: .90rem;
+        margin-bottom:10px;
+        box-shadow: 0 2px 6px 0 rgb(218 218 253 / 65%), 0 2px 6px 0 rgb(206 206 238 / 54%);
+    }
+
+    .card .card-body {
+        padding: 0.5rem 1rem;
+    }
+    .header-today-section{
+        padding: 0.5rem 0.2rem;
+        border-radius:10px;
+        background-color:#fff;
+        box-shadow:0px 0px 10px -3px;
+    }
+</style>
+<div class="page-header">
+    <h3 class="page-title">
+        <span class="page-title-icon bg-gradient-primary text-white me-2">
+            <i class="mdi mdi-view-grid"></i>
+        </span> Dashboard
+    </h3>
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb">
+            <li class=" ">
+                <span class=" bg-gradient-primary buttton " data-toggle="modal" data-target="#add_new_dealer"
+                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;"> <i class="mdi mdi-filter"> Filters </i></span>
+            </li>
+        </ul>
+    </nav> 
+</div>
+
+<div class="row">
+    <div class="col-lg-12 ">
+        <div class="row mx-1 py-2 header-today-section">
+            <h4>Today Status</h4>
+            <hr>
+            <div class="container" style="">
+                <div class="">
+
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4">
+                        <div class="col">
+                            <div class="card radius-10 border-start border-0 border-5 border-info">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-secondary">Total Sale Amount</p>
+                                            <h3 class="my-1 text-info">{{total_grand_total_today}}.00</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1  class=" text-info">₹</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class="card radius-10 border-start border-0 border-5 border-success">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-secondary">GST Generated</p>
+                                            <h3 class="my-1 text-success">{{total_gst_amount_today}}.00</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1  class=" text-success">₹</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card radius-10 border-start border-0 border-5 border-danger">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-secondary">Today Invoice Generated</p>
+                                            <h3 class="my-1 text-danger">{{total_invoices_today}}</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1><i class="mdi mdi-printer text-danger"></i></h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card radius-10 border-start border-0 border-5 border-primary">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-secondary">Products Sale</p>
+                                            <h3 class="my-1" style="color:#B14ABB;">{{total_quantity_today}}</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1><i class="mdi mdi-view-carousel"  style="color:#B14ABB;"></i></h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-sm-6">
+        <div class="card recent-sales overflow-auto">
+
+          <div class="card-body">
+            <h5 class="card-title">Top Sale Products |<span style="font-size:0.8rem; color:gray;"> recent 30 day </span></h5>
+            <div class="mt-4">
+              <canvas id="top_products_chart" style="width:100%;"></canvas>
+            </div>
+          </div>
+        </div>
+      </div><!-- End Card -->
+
+      <div class="col-sm-6">
+        <div class="card recent-sales overflow-auto">
+
+          <div class="card-body">
+            <h5 class="card-title">Top Dealers |<span style="font-size:0.8rem; color:gray;"> recent 30 day </span></h5>
+            <div class="mt-4">
+              <canvas id="top_dealer_chart" style="width:100%;"></canvas>
+            </div>
+          </div>
+        </div>
+      </div><!-- End Card -->
+</div>
+
+<script>
+    var top_five_sale_product_quantity = {{ top_five_sale_product_quantity | safe }};
+    var top_five_sale_product_labels = {{ top_five_sale_product_labels | safe }};
+
+    var top_products_chart = {
+        type: 'bar',
+        data: {
+            datasets: [{
+                data: top_five_sale_product_quantity,
+                backgroundColor: [
+                    '#054483', '#02BC3D', '#FFC107', '#FF5722', '#9C27B0',
+                    '#3F51B5', '#009688', '#4CAF50', '#607D8B', '#FF9800'
+                ],
+                label: 'Top Sale Product'
+            }],
+            labels: top_five_sale_product_labels
+        },
+        options: {
+            responsive: true
+        }
+    };
+ 
+    var top_five_dealer_total_amount = {{ top_five_dealer_total_amount | safe }};
+    var top_five_dealer_name = {{ top_five_dealer_name | safe }};
+
+    var dealer_chart = {
+        type: 'pie',
+        data: {
+            datasets: [{
+                data: top_five_dealer_total_amount,
+                backgroundColor: [
+                '#054483', '#02BC3D', '#FFC107', '#FF5722', '#9C27B0',
+                '#3F51B5', '#009688', '#4CAF50', '#607D8B', '#FF9800'
+                ],
+            }],
+            labels: top_five_dealer_name
+        },
+        options: {
+            responsive: true
+        }
+    };
+ 
+    
+    window.onload = function () {
+        var ctx1 = document.getElementById('top_products_chart').getContext('2d');
+        window.myPieChart1 = new Chart(ctx1, top_products_chart);
+
+        
+        var ctx2 = document.getElementById('top_dealer_chart').getContext('2d');
+        window.myPieChart1 = new Chart(ctx2, dealer_chart);
+
+    };
+     
+</script>
+
+{% endblock containt %}

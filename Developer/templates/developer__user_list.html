@@ -1,0 +1,111 @@
+{% extends "developer_base.html" %}
+{% load crispy_forms_tags %}
+{% block containt %}
+<style>
+    #hint_id_username, #hint_id_is_staff{
+        display: none;
+</style>
+<div class="page-header">
+    <h3 class="page-title">
+        <span class="page-title-icon bg-gradient-primary text-white me-2">
+            <i class="mdi mdi-account"></i>
+        </span> User List
+    </h3>
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb"> 
+            <li class=" "> 
+            </li>
+        </ul>
+    </nav>
+</div>
+ 
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="container" style="max-width:90%;">
+                <div>
+                    <form action="" method="POST"  enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-sm-4">
+                                {{form.username|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                {{form.name|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                {{form.designation|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                {{form.profile_image|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                {{form.is_staff|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                {{form.is_admin|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                {{form.password1|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                {{form.password2|as_crispy_field}}
+                            </div>
+                        </div>
+                    <input type="submit" value="Submit"  class="btn bg-gradient-primary text-light mt-3">
+                    </center>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+ 
+
+<div class="container mt-3" style=" overflow:scroll;">
+    <table id="example" class="table table-striped " style="overflow:scroll; width:100%;min-width: max-content;">
+        <thead>
+            <tr style="background:#02B4C3;">
+                <th scope="col" class="text-center text-white" style="">Sr.No</th>
+                <th scope="col" class="text-center text-white" style="">Employee Name</th> 
+                <th scope="col" class="text-center text-white" style="">Username</th>
+                <th scope="col" class="text-center text-white" style="">Role</th>
+                <th scope="col" class="text-center text-white" style="">Is Staff</th>
+                <th scope="col" class="text-center text-white" style="">Is Admin</th>
+                <th scope="col" class="text-center text-white" style="">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if user_rec %}
+            {% for r in user_rec %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{r.name}}</td>
+                <td>{{r.username}}</td>
+                <td>{{r.designation}}</td>
+                <td>{{r.is_staff}}</td>
+                <td>{{r.is_admin}}</td>
+                <td>
+                    <center>
+                        <a href="{% url "developer_update_user" r.id %}" class="btn btn-success px-3"><i class="mdi mdi-pencil"></i></a>
+                        <a href="" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>
+                    </center>
+                </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+ 
+
+<script>
+ 
+</script>
+ 
+{% endblock containt %}

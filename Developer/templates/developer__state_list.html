@@ -1,0 +1,109 @@
+{% extends "developer_base.html" %}
+{% load crispy_forms_tags %}
+{% block containt %}
+<style>
+  
+</style>
+<div class="page-header">
+    <h3 class="page-title">
+        <span class="page-title-icon bg-gradient-primary text-white me-2">
+            <i class="mdi mdi-account"></i>
+        </span> State List
+    </h3>
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb"> 
+            <li class=" ">
+                <span class=" bg-gradient-primary buttton " data-toggle="modal" data-target="#import_states"
+                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;">Add State</span>
+
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<div class="modal fade" id="import_states" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" >
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Import States</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <form id="my-form" method="POST" enctype="multipart/form-data"
+                                action="{% url 'developer_state_bulk_creation' %}">
+                                {% csrf_token %}
+                                <input type="file" name="excel_file" accept=".xlsx" class="form-control">
+                                <!-- Add the 'name' attribute -->
+                        <center>
+                            <input type="submit" value="Submit" class="btn bg-gradient-primary text-light px-5 px-3 mt-3">
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="container" style="max-width:90%;">
+                <div>
+                    <form action="" method="POST">
+                        {% csrf_token %}
+                        
+                    <label for="State Name">State Name*</label>
+                    <input type="text" name="txt_state" class="form-control mt-2" id="" required>
+                    <center>
+                    <input type="submit" value="Submit"  class="btn bg-gradient-primary text-light mt-3">
+                    </center>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+ 
+
+<div class="container mt-3" style=" overflow:scroll;">
+    <table id="example" class="table table-striped " style="overflow:scroll; width:100%;min-width: max-content;">
+        <thead>
+            <tr style="background:#02B4C3;">
+                <th scope="col" class="text-center text-white" style="">Sr.No</th>
+                <th scope="col" class="text-center text-white" style="">State Name</th>
+                <th scope="col" class="text-center text-white" style="">Action</th> 
+            </tr>
+        </thead>
+        <tbody>
+            {% if state_rec %}
+            {% for r in state_rec %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{r.state_name}}</td>
+                <td>
+                    <center>
+                        <a href="{% url "developer_delete_state" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>
+                    </center>
+                </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+ 
+
+<script>
+ 
+</script>
+ 
+{% endblock containt %}

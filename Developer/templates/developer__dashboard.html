@@ -1,0 +1,79 @@
+{% extends 'developer_base.html' %}
+{% block content %}
+ 
+<main id="main" class="main">
+
+    <div class="pagetitle">
+        <h1>Exam List</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item"><a href="#">Exam List </a></li>
+            </ol>
+        </nav> 
+    <section class="section dashboard">
+        <div class="row">
+            <!-- Left side columns -->
+            <div class="col-lg-12">
+                <div class="row">
+                    {% if not runing_exam %}
+                    <div class="container" style=" overflow:scroll;">
+                        <table id="example" class="table table-striped " style="overflow:scroll; width:100%;min-width: max-content;">
+                            <thead>
+                                <tr style="background:#02B4C3;">
+                                        <th scope="col" class="text-center text-white" style="">Sr.No</th> 
+                                        <th scope="col" class="text-center text-white" style="">Action</th>
+                                        <th scope="col" class="text-center text-white" style="">Exam Title</th> 
+                                        <th scope="col" class="text-center text-white" style="">Subject</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if rec %}
+                                {% for r in rec %}
+                                <tr>
+                                    <td>{{forloop.counter}}</td>
+                                    <td>
+                                    <center>
+                                        <a href="{% url 'exam_overview' r.id %}"
+                                        class="btn btn-primary px-3">Exam Overview</a>   
+                                    </center>
+                                    </td>
+                                    <td>{{r.name}}</td>
+                                    <td>{{r.subject}}</td>  
+                                </tr>
+                                {% endfor %}
+                                {% else %} 
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% else %}
+                     <h4 class="alert alert-primary"> "<b>{{exam_name}}</b>" Exam is Running :  <a href="{% url 'start_exam' exam_id %}" class="btn btn-primary">Start Now</a></h4>   
+                {% endif %}
+            </div>
+        </div><!-- End Left side columns -->
+    </section>
+
+</main><!-- End #main -->
+
+
+
+
+
+<script>
+    $(document).ready( function () {
+  $('#example').DataTable();
+});
+</script>
+
+<script>
+   $(document).ready( function () {
+  $('#myTable').DataTable({
+    "paging": true,
+    "pageLength": 10,
+    "searching": true
+  });
+}); 
+</script>
+{% endblock content %}

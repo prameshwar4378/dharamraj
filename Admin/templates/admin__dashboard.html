@@ -1,7 +1,43 @@
 {% extends "admin_base.html" %}
 {% load crispy_forms_tags %}
 {% block containt %}
-<style>
+<style> 
+    #backup-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column; /* Updated to column layout */
+        z-index: 9999;
+    }
+
+    .bc-loader {
+        border: 8px solid #3498db;
+        border-top: 8px solid #f3f3f3;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+
+    #statusMessage {
+        text-align: center;
+        color: #333;
+        font-size: 16px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+
     .card {
         position: relative;
         display: flex;
@@ -35,11 +71,51 @@
     <nav aria-label="breadcrumb">
         <ul class="breadcrumb">
             <li class=" ">
-                <span class=" bg-gradient-primary buttton " data-toggle="modal" data-target="#add_new_dealer"
-                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;"> <i class="mdi mdi-filter"> Filters </i></span>
+               <!-- <span class=" bg-gradient-primary buttton mx-2"  data-toggle="modal" data-target="#filter_model" 
+                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;"> <i class="mdi mdi-filter"></i></span>-->
+                <span class=" bg-gradient-primary buttton "   onclick="backupAndUpload()"
+                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;"> <i class="mdi mdi-sync"> Sync </i></span>
             </li>
         </ul>
     </nav> 
+</div>
+
+
+<div class="modal fade" id="filter_model" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Filter Data</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                
+                    <form method="GET">
+                        {% csrf_token %}
+                        <div class="row">  
+                            <div class="col-sm-6">
+                                 <label for="start_date">Start Date</label>
+                                 <input type="date" name="start_date" id="start_date">
+                            </div> 
+                        </div>
+                        <center>
+                            <input type="submit" value="Update Invoice" id="btnUpdateSubmit" onclick="buttonDisabled()" class="btn bg-gradient-primary text-light"></input>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="backup-loader" style="display:none;">
+    <div class="bc-loader"></div>
+    <h1 id="statusMessage">Waiting for action...</h1>
 </div>
 
 <div class="row">
@@ -50,18 +126,18 @@
             <div class="container" style="">
                 <div class="">
 
-                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3">
                         <div class="col">
                             <div class="card radius-10 border-start border-0 border-5 border-info">
                                 <div class="card-body">
                                     <div class="d-flex align-items-center">
                                         <div>
-                                            <p class="mb-0 text-secondary">Total Sale Amount</p>
+                                            <p class="mb-0 text-secondary">Total Invoice Amount</p>
                                             <h3 class="my-1 text-info">{{total_grand_total_today}}.00</h3>
                                         </div>
                                         <div
                                             class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
-                                            <h1  class=" text-info">₹</h1>
+                                            <h1 class=" text-info">₹</h1>
                                         </div>
                                     </div>
                                 </div>
@@ -116,14 +192,113 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col">
+                            <div class="card radius-10 border-start border-0 border-5 border-success">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-success">Credited Amount</p>
+                                            <h3 class="my-1 text-success">{{total_credited_amount_today}}.00</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1  class=" text-success">₹</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class="card radius-10 border-start border-0 border-5 border-danger">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-secondary">Debited Amount</p>
+                                            <h3 class="my-1 text-danger">{{total_debited_amount_today}}.00</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1  class=" text-danger">₹</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
             </div>
-
         </div>
     </div>
 </div>
+
+
+
+<div class="row mt-3">
+    <div class="col-lg-12 ">
+        <div class="row mx-1 py-2 header-today-section">
+            <h4>Total Amount Records</h4>
+            <hr>
+            <div class="container" style="">
+                <div class="">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3">
+                        <div class="col">
+                            <div class="card radius-10 border-start border-0 border-5 border-success">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-success">Credited Amount</p>
+                                            <h3 class="my-1 text-success">{{total_credited_amount}}.00</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1  class=" text-success">₹</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class="card radius-10 border-start border-0 border-5 border-danger">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-secondary">Debited Amount</p>
+                                            <h3 class="my-1 text-danger">{{total_debited_amount}}.00</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1  class=" text-danger">₹</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card radius-10 border-start border-0 border-5 border-info">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-secondary">Available Balance</p>
+                                            <h3 class="my-1 text-info">{{total_balance}}</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1  class=" text-info">₹</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                         
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <div class="row mt-3">
     <div class="col-sm-6">
@@ -204,6 +379,64 @@
 
     };
      
+</script>
+
+<script>
+    function showLoader() { 
+        document.getElementById('backup-loader').style.display = 'flex';
+    }
+    
+    function hideLoader() {
+        document.getElementById('backup-loader').style.display = 'none';
+    }
+
+    function backupAndUpload() {
+        showLoader();
+        document.getElementById('statusMessage').innerText = 'Generating backup file... Please wait...';
+        
+        // Make AJAX request to create backup
+        fetch('/developer/upload_backup_file/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),  // Include CSRF token for security
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('statusMessage').innerText = 'File uploaded successfully.';
+                hideLoader();
+                swal({
+                    title: "Good job!",
+                    text: "Backup Uploaded Success",
+                    icon: "success",
+                    button: "OK",
+                });
+            } else {
+                document.getElementById('statusMessage').innerText = 'Error uploading file: ' + data.message;
+            }
+        })
+        .catch(error => {
+            console.error('Error uploading file:', error);
+        });
+    }
+
+    // Function to get CSRF token from cookies
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 </script>
 
 {% endblock containt %}

@@ -25,10 +25,7 @@
     </h3>
     <nav aria-label="breadcrumb">
         <ul class="breadcrumb">
-            <li class=" ">
-                <span class=" bg-gradient-primary buttton " data-toggle="modal" data-target="#add_new_product"
-                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;">Add New Product</span>
-
+            <li class=" "> 
             </li>
         </ul>
     </nav>
@@ -37,14 +34,24 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="row">
-            <div class="container" style="max-width:90%;">
+            <div class="container" style="max-width:97%;">
+                <div class="text-lg-end text-start"> <!-- Use text-lg-end for right alignment in large screens -->
+ 
+                    <span class="bg-gradient-primary button float-lg-right text-left mb-2 mb-lg-0" data-toggle="modal" data-target="#add_new_product"
+                    style="padding: 8px; border-radius: 6px; cursor: pointer; color: white;">Add New Product</span>
 
+                <span class="bg-gradient-primary button float-lg-right text-left mb-2 mb-lg-0" data-toggle="modal" data-target="#add_new_stock"
+                    style="padding: 8px; border-radius: 6px; cursor: pointer; color: white;">New Stock</span>
 
+                <a href="{% url "admin_purchase_list" %}"  class="bg-gradient-primary button float-lg-right text-left mb-2 mb-lg-0"
+                    style="padding: 8px; border-radius: 6px; cursor: pointer; color: white; text-decoration:none">Stock History</a>
+
+                </div>
             </div>
         </div>
     </div>
 </div>
-
+<hr>
 
 <div class="modal fade" id="add_new_product" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
     aria-hidden="true">
@@ -84,6 +91,43 @@
                         <center>
                             <input type="submit"  id="btnCreateSubmit" onclick="buttonDisabled()" value="Create Product" class="btn bg-gradient-primary text-light"></input>
                             <a  class="btn bg-gradient-primary text-light" class="close" data-dismiss="modal" aria-label="Close"  data-toggle="modal" data-target="#import_dealer">Bulk Import</a>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<div class="modal fade" id="add_new_stock" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" >
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Add New Stock</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+
+                    <form method="post" id="stock_creation_form" action="{% url 'admin_create_purchase' %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-sm-12">
+                                {{add_stock.product|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-12">
+                                {{add_stock.quantity|as_crispy_field}}
+                            </div>
+                        </div>
+                        <center>
+                            <input type="submit" id="btnCreateSubmit" value="Add Product"
+                                class="btn bg-gradient-primary text-light"></input>
                         </center>
                     </form>
                 </div>
@@ -147,7 +191,7 @@
                     <center>
                         <a href="#" class="btn btn-success px-3" data-toggle="modal" data-target="#update_product" onclick="update_dealer('{{r.id}}','{{r.product_code}}','{{r.product_name}}','{{r.description}}','{{r.sale_amount}}','{{r.gst}}','{{r.hsn_sac}}')"><i class="mdi mdi-pencil"></i></a>
 
-                        <a href="{% url "admin_delete_product" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>
+                      <!--  <a href="{% url "admin_delete_product" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>-->
                     </center>
                 </td>
             </tr>

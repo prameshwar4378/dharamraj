@@ -4,8 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .views import *
 from .export import *
-urlpatterns = [
-  path('',index, name='admin_home'), 
+urlpatterns = [ 
   path('dashboard/',dashboard, name='admin_dashboard'), 
 
   path('user_list/',user_list, name='admin_user_list'), 
@@ -38,6 +37,7 @@ urlpatterns = [
   path('create_transaction/',create_transaction, name='admin_create_transaction'),
   path('update_transaction/',update_transaction, name='admin_update_transaction'), 
   path('delete_transaction/<int:id>',delete_transaction, name='admin_delete_transaction'), 
+  path('print_transactions_receipt/<int:id>',print_transactions_receipt, name='admin_print_transactions_receipt'), 
 
   path('invoice_item_list/<int:id>',invoice_item_list, name='admin_invoice_item_list'), 
   path('delete_invoice_item/<int:id>',delete_invoice_item, name='admin_delete_invoice_item'), 
@@ -46,7 +46,7 @@ urlpatterns = [
   path('dealer_bulk_creation/',dealer_bulk_creation, name='admin_dealer_bulk_creation'), 
   path('product_bulk_creation/',product_bulk_creation, name='admin_product_bulk_creation'), 
 
-  path('print_all_bills_formate/<int:id>',print_all_bills_formate, name='admin_print_all_bills_formate'), 
+  path('print_all_invoice_formate/<int:id>',print_all_invoice_formate, name='admin_print_all_invoice_formate'), 
   path('troubleshoot_transactions_for_balance/',troubleshoot_transactions_for_balance, name='admin_troubleshoot_transactions_for_balance'), 
 
 
@@ -54,6 +54,17 @@ urlpatterns = [
   path('export_invoice_list_csv/',export_invoice_list_csv, name='admin_export_invoice_list_csv'), 
   path('export_transaction_list_csv/',export_transaction_list_csv, name='admin_export_transaction_list_csv'), 
   path('export_transaction_list_pdf/',export_transaction_list_pdf, name='admin_export_transaction_list_pdf'), 
+
+  # performa Invoice Links
+  path('performa_invoice_list/',performa_invoice_list, name='admin_performa_invoice_list'), 
+  path('create_performa_invoice/',create_performa_invoice, name='admin_create_performa_invoice'),  
+  path('update_performa_invoice/',update_performa_invoice, name='admin_update_performa_invoice'), 
+  path('delete_performa_invoice/<int:id>',delete_performa_invoice, name='admin_delete_performa_invoice'), 
+  
+  path('performa_invoice_item_list/<int:id>',performa_invoice_item_list, name='admin_performa_invoice_item_list'), 
+  path('delete_performa_invoice_item/<int:id>',delete_performa_invoice_item, name='admin_delete_performa_invoice_item'), 
+  path('print_performa_invoice/<int:id>',print_performa_invoice, name='admin_print_performa_invoice'), 
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)

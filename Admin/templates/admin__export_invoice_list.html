@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-
+{% load static %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,8 +17,33 @@
             margin-bottom: 20px;
         }
 
-        body {
-            /* Adjust margin as needed */
+        .company-details {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            border-bottom: 2px solid #ccc;
+            background: #fff;
+            border-radius: 20px 20px 0px 0px;
+        }
+
+        .logo img {
+            max-width: 240px;
+            max-height: 240px;
+        }
+
+        .info {
+            text-align: right;
+        }
+
+        .info h1 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .info p {
+            margin: 0px 0;
+            font-size: 1em;
+            color: #555;
         }
 
         .text-center {
@@ -58,16 +83,53 @@
             white-space: normal; /* Allow text to wrap within this specific td */
             overflow: hidden;
         }
+        
+        .report-title {
+            width: 100%;
+            background: red;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
     </style>
 
 </head>
 
 <body>
     <div class="custom-container">
-        <div class="header-container">
-           <center>
-            <h1>Invoice Records</h1>
-           </center> 
+        <div class="company-details ">
+            <table>
+                <tr>
+                    <td>
+
+                        <div class="logo">
+                            <!-- <img src="{% static 'assets/images/logo.svg' %}" alt="Company Logo"> -->
+                            <div class="report-title">
+                                <center>
+                                    <h3 style="font-size:20px;"><b>Invoice Record</b></h3>
+                                </center>
+                            </div>
+                            <p
+                                style="padding:5px 15px; border-radius:5px; box-shadow:0px 0px 10px -3px gray; margin:10px;">
+                                <b>From</b> : 12 Jan 2023 <b>To</b> 05 Feb 2023</p>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="info">
+                            <h1>DharamRaj Corporation</h1>
+                            <p style=""><b>Factory Address :</b> Bhumi Ind. Area-2, Plot-6, Rajkot Gondal Highway,
+                            </p>
+                            <p style="margin-top:-5px;">Veraval (Shapar) - 360024 Taluka - Kotda Sangani, Dist.-Rajkot
+                            </p>
+                            <p style="margin-top:-5px;"><b>GST Number:</b> 24AAVFD3427H1ZB</p>
+                            <p style="margin-top:-5px;"><b>Contact Details:</b> Rajkot (Gujarat) India. Mobile : +91
+                                8200461535</p>
+                        </div>
+                    </td>
+                </tr>
+
+
+            </table>
         </div>
         <br>
         <table class="table table-hover" style="background:white;">

@@ -152,7 +152,7 @@
                     <center>
                         <a href="#" class="btn btn-success px-3" data-toggle="modal" data-target="#update_dealer" onclick="update_dealer('{{r.id}}','{{r.dealer_name}}','{{r.business_name}}','{{r.mobile_no}}','{{r.email_id}}','{{r.pin_code}}','{{r.state.id}}','{{r.address}}','{{r.gst_number}}')"><i class="mdi mdi-pencil"></i></a>
 
-                        <a href="{% url "admin_delete_dealer" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>
+                      <!--  <a href="{% url "admin_delete_dealer" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>-->
                     </center>
                 </td>
             </tr>
@@ -214,6 +214,32 @@
             </div>
         </div>
     </div>
+</div>
+
+<div class="pagination justify-content-center mt-4">
+    <ul class="pagination">
+        {% if dealer_rec.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">&laquo;&laquo; first</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ dealer_rec.previous_page_number }}">previous</a>
+            </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link">Page {{ dealer_rec.number }} of {{ dealer_rec.paginator.num_pages }}.</span>
+        </li>
+
+        {% if dealer_rec.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ dealer_rec.next_page_number }}">next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ dealer_rec.paginator.num_pages }}">last &raquo;&raquo;</a>
+            </li>
+        {% endif %}
+    </ul>
 </div>
 
 <script>

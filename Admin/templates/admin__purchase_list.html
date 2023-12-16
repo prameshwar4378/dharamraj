@@ -31,9 +31,8 @@
     <nav aria-label="breadcrumb">
         <ul class="breadcrumb">
             <li class=" ">
-                <span class=" bg-gradient-primary buttton " data-toggle="modal" data-target="#add_new_stock"
-                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;">Add Stock</span>
-
+               <!-- <span class=" bg-gradient-primary buttton " data-toggle="modal" data-target="#add_new_stock"
+                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;">Add Stock</span>-->
             </li>
         </ul>
     </nav>
@@ -126,6 +125,31 @@
     </table>
 </div>
 
+<div class="pagination justify-content-center mt-4">
+    <ul class="pagination">
+        {% if stock_rec.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">&laquo;&laquo; first</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ stock_rec.previous_page_number }}">previous</a>
+            </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link">Page {{ stock_rec.number }} of {{ stock_rec.paginator.num_pages }}.</span>
+        </li>
+
+        {% if stock_rec.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ stock_rec.next_page_number }}">next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ stock_rec.paginator.num_pages }}">last &raquo;&raquo;</a>
+            </li>
+        {% endif %}
+    </ul>
+</div>
 
 
 <!-- Modal -->
@@ -150,6 +174,7 @@
         </div>
     </div>
 </div>
+
 
 <!--<div class="modal fade" id="update_stock" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
     aria-hidden="true">

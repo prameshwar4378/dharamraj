@@ -1,0 +1,279 @@
+{% extends "staff_base.html" %}
+{% load crispy_forms_tags %}
+{% block containt %}
+<style>
+    /* Add your loading animation styles here */
+    .loading-spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #3498db;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+<div class="page-header">
+    <h3 class="page-title">
+        <span class="page-title-icon bg-gradient-primary text-white me-2">
+            <i class="mdi mdi-account"></i>
+        </span> Dealer List
+    </h3>
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb">
+            <li class=" ">
+                <span class=" bg-gradient-primary buttton " data-toggle="modal" data-target="#add_new_dealer"
+                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;">Add New Dealer</span>
+
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="container" style="max-width:90%;">
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="add_new_dealer" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Create New Dealer</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                
+                    <form method="post" id="dealer_creation_form" action="{% url 'staff_create_dealer' %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-sm-6">
+                                 {{create_dealer_fm.dealer_name|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                 {{create_dealer_fm.business_name|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_dealer_fm.gst_number|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_dealer_fm.mobile_no|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_dealer_fm.email_id|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                 {{create_dealer_fm.pin_code|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                 {{create_dealer_fm.state|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-13">
+                                 {{create_dealer_fm.address|as_crispy_field}}
+                            </div>
+                        </div>
+                        <center>
+                            <input type="submit"  id="btnCreateSubmit" onclick="buttonDisabled()" value="Create Dealer" class="btn bg-gradient-primary text-light"></input>
+                            <a  class="btn bg-gradient-primary text-light" class="close" data-dismiss="modal" aria-label="Close"  data-toggle="modal" data-target="#import_dealer">Bulk Import</a>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="import_dealer" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" >
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Import Dealer</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <form id="my-form" method="POST" enctype="multipart/form-data"
+                                action="{% url 'staff_dealer_bulk_creation' %}">
+                                {% csrf_token %}
+                                <input type="file" name="excel_file" accept=".xlsx" class="form-control">
+                                <!-- Add the 'name' attribute -->
+                        <center>
+                            <input type="submit" value="Submit" class="btn bg-gradient-primary text-light px-5 px-3 mt-3">
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container mt-3" style=" overflow:scroll;">
+    <table id="example" class="table table-striped " style="overflow:scroll; width:100%;min-width: max-content;">
+        <thead>
+            <tr class="bg-gradient-primary text-light ">
+                <th scope="col" class="text-center text-white" style="">Sr.No</th>
+                <th scope="col" class="text-center text-white" style="">Business Name</th>
+                <th scope="col" class="text-center text-white" style="">Dealer Name</th> 
+                <th scope="col" class="text-center text-white" style="">Address</th> 
+                <th scope="col" class="text-center text-white" style="">State</th> 
+                <th scope="col" class="text-center text-white" style="">Action</th> 
+            </tr>
+        </thead>
+        <tbody id="dealer_table_body">
+            {% if dealer_rec %}
+            {% for r in dealer_rec %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{r.business_name}}</td>
+                <td>{{r.dealer_name}}</td> 
+                <td class="text-center">{{r.address}}</td>
+                <td class="text-center">{{r.state}}</td>
+                <td>
+                    <center>
+                        <a href="#" class="btn btn-success px-3" data-toggle="modal" data-target="#update_dealer" onclick="update_dealer('{{r.id}}','{{r.dealer_name}}','{{r.business_name}}','{{r.mobile_no}}','{{r.email_id}}','{{r.pin_code}}','{{r.state.id}}','{{r.address}}','{{r.gst_number}}')"><i class="mdi mdi-pencil"></i></a>
+
+                      <!--<a href="{% url "staff_delete_dealer" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>-->  
+                    </center>
+                </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+ 
+
+<div class="modal fade" id="update_dealer" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Update Dealer</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                
+                    <form method="post" id="dealer_update_form" action="{% url "staff_update_dealer" %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-sm-6">
+                                 {{create_dealer_fm.dealer_name|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                 {{create_dealer_fm.business_name|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_dealer_fm.gst_number|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_dealer_fm.mobile_no|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_dealer_fm.email_id|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                 {{create_dealer_fm.pin_code|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                 {{create_dealer_fm.state|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-13">
+                                 {{create_dealer_fm.address|as_crispy_field}}
+                            </div>
+                            <input type="hidden" name="txt_id" id="txt_id">
+                        </div>
+                        <center>
+                            <input type="submit" value="Update Dealer" id="btnUpdateSubmit" onclick="buttonDisabled()" class="btn bg-gradient-primary text-light"></input>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="pagination justify-content-center mt-4">
+    <ul class="pagination">
+        {% if dealer_rec.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">&laquo;&laquo; first</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ dealer_rec.previous_page_number }}">previous</a>
+            </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link">Page {{ dealer_rec.number }} of {{ dealer_rec.paginator.num_pages }}.</span>
+        </li>
+
+        {% if dealer_rec.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ dealer_rec.next_page_number }}">next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ dealer_rec.paginator.num_pages }}">last &raquo;&raquo;</a>
+            </li>
+        {% endif %}
+    </ul>
+</div>
+
+<script>
+    function update_dealer(id, dealer_name, business_name, mobile_no, email_id, pin_code, state, address,gst_number) {
+        var id_val = document.getElementById("dealer_update_form").elements["txt_id"];
+        id_val.value = id;
+
+        var dealer_name_val = document.getElementById("dealer_update_form").elements["id_dealer_name"];
+        dealer_name_val.value = dealer_name;
+
+        var business_name_val = document.getElementById("dealer_update_form").elements["id_business_name"];
+        business_name_val.value = business_name;
+
+        var mobile_no_val = document.getElementById("dealer_update_form").elements["id_mobile_no"];
+        mobile_no_val.value = mobile_no;
+
+        var email_id_val = document.getElementById("dealer_update_form").elements["id_email_id"];
+        email_id_val.value = email_id;
+
+        var pin_code_val = document.getElementById("dealer_update_form").elements["id_pin_code"];
+        pin_code_val.value = pin_code;
+
+        // Accessing state and address directly
+        var state_val = document.getElementById("dealer_update_form").elements["id_state"];
+        state_val.value = state;
+
+        var address_val = document.getElementById("dealer_update_form").elements["id_address"];
+        address_val.value = address;
+
+        var gst_number_val = document.getElementById("dealer_update_form").elements["id_gst_number"];
+        gst_number_val.value = gst_number;
+    }
+
+</script>
+
+ 
+{% endblock containt %}

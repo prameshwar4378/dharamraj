@@ -16,16 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from Admin import urls as Admin_ERP_Urls
+from Admin import urls as Admin_Urls
+from Staff import urls as Staff_Urls
 from Developer import urls as Developer_ERP_Urls
+
 from Developer.views import login,logout
 from django.conf import settings
 from django.conf.urls.static import static
 urlpatterns = [
     # path('user/', include(User_ERP_Urls)),
-    path('admin/', include(Admin_ERP_Urls)),
+    path('admin/', include(Admin_Urls)), 
+    path('staff/', include(Staff_Urls)), 
+    path('', Developer_ERP_Urls.index, name="index"),
     path('developer/', include(Developer_ERP_Urls)),
-    path('login/',login, name='login'), 
+    path('accounts/login/',login, name='account_login'), 
     path('logout/',logout, name='logout'), 
 ]
 if settings.DEBUG:

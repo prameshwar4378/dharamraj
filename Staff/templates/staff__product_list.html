@@ -1,0 +1,284 @@
+{% extends "staff_base.html" %}
+{% load crispy_forms_tags %}
+{% block containt %}
+<style>
+    /* Add your loading animation styles here */
+    .loading-spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #3498db;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+<div class="page-header">
+    <h3 class="page-title">
+        <span class="page-title-icon bg-gradient-primary text-white me-2">
+            <i class="mdi mdi-account"></i>
+        </span> Product List
+    </h3>
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb">
+            <li class=" ">
+            </li>
+        </ul>
+    </nav>
+</div>
+ 
+
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="container" style="max-width:97%;">
+                <div class="text-lg-end text-start"> <!-- Use text-lg-end for right alignment in large screens -->
+ 
+                    <span class="bg-gradient-primary button float-lg-right text-left mb-2 mb-lg-0" data-toggle="modal" data-target="#add_new_product"
+                    style="padding: 8px; border-radius: 6px; cursor: pointer; color: white;">Add New Product</span>
+
+                <span class="bg-gradient-primary button float-lg-right text-left mb-2 mb-lg-0" data-toggle="modal" data-target="#add_new_stock"
+                    style="padding: 8px; border-radius: 6px; cursor: pointer; color: white;">New Stock</span>
+
+                <a href="{% url "staff_purchase_list" %}"  class="bg-gradient-primary button float-lg-right text-left mb-2 mb-lg-0"
+                    style="padding: 8px; border-radius: 6px; cursor: pointer; color: white; text-decoration:none">Stock History</a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<hr>
+
+
+<div class="modal fade" id="add_new_product" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Create New Product</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                
+                    <form method="post" id="product_creation_form" action="{% url 'staff_create_product' %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-sm-6">
+                                 {{create_product_fm.product_code|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                 {{create_product_fm.product_name|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_product_fm.hsn_sac|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_product_fm.sale_amount|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_product_fm.gst|as_crispy_field}}
+                            </div> 
+                            <div class="col-sm-12">
+                                 {{create_product_fm.description|as_crispy_field}}
+                            </div>
+                        </div>
+                        <center>
+                            <input type="submit"  id="btnCreateSubmit" onclick="buttonDisabled()" value="Create Product" class="btn bg-gradient-primary text-light"></input>
+                            <a  class="btn bg-gradient-primary text-light" class="close" data-dismiss="modal" aria-label="Close"  data-toggle="modal" data-target="#import_dealer">Bulk Import</a>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade" id="add_new_stock" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" >
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Add New Stock</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+
+                    <form method="post" id="stock_creation_form" action="{% url 'staff_create_purchase' %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-sm-12">
+                                {{add_stock.product|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-12">
+                                {{add_stock.quantity|as_crispy_field}}
+                            </div>
+                        </div>
+                        <center>
+                            <input type="submit" id="btnCreateSubmit" value="Add Product"
+                                class="btn bg-gradient-primary text-light"></input>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="import_dealer" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" >
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Import Product</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <form id="my-form" method="POST" enctype="multipart/form-data"
+                                action="{% url 'staff_product_bulk_creation' %}">
+                                {% csrf_token %}
+                                <input type="file" name="excel_file" accept=".xlsx" class="form-control">
+                                <!-- Add the 'name' attribute -->
+                        <center>
+                            <input type="submit" value="Submit" class="btn bg-gradient-primary text-light px-5 px-3 mt-3">
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container mt-3" style=" overflow:scroll;">
+    <table id="example" class="table table-striped " style="overflow:scroll; width:100%;min-width: max-content;">
+        <thead>
+            <tr class="bg-gradient-primary text-light ">
+                <th scope="col" class="text-center text-white" style="">Sr.No</th>
+                <th scope="col" class="text-center text-white" style="">Product Code</th>
+                <th scope="col" class="text-center text-white" style="">Product Name</th> 
+                <th scope="col" class="text-center text-white" style="">NDP Amount</th> 
+                <th scope="col" class="text-center text-white" style="">available_stock</th> 
+                <th scope="col" class="text-center text-white" style="">Action</th> 
+            </tr>
+        </thead>
+        <tbody id="dealer_table_body">
+            {% if product_rec %}
+            {% for r in product_rec %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{r.product_code}}</td>
+                <td>{{r.product_name}}</td>
+                <td>{{r.sale_amount}}</td> 
+                <td>{{r.available_stock}}</td> 
+                <td>
+                    <center>
+                        <a href="#" class="btn btn-success px-3" data-toggle="modal" data-target="#update_product" onclick="update_dealer('{{r.id}}','{{r.product_code}}','{{r.product_name}}','{{r.description}}','{{r.sale_amount}}','{{r.gst}}','{{r.hsn_sac}}')"><i class="mdi mdi-pencil"></i></a>
+
+                       <!-- <a href="{% url "staff_delete_product" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>-->
+                    </center>
+                </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+ 
+
+<div class="modal fade" id="update_product" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Update Product</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                
+                    <form method="post" id="product_update_form" action="{% url "staff_update_product" %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-sm-6">
+                                 {{create_product_fm.product_code|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                 {{create_product_fm.product_name|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_product_fm.hsn_sac|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_product_fm.sale_amount|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-4">
+                                 {{create_product_fm.gst|as_crispy_field}}
+                            </div> 
+                            <div class="col-sm-12">
+                                 {{create_product_fm.description|as_crispy_field}}
+                            </div>
+                            <input type="hidden" name="txt_id" id="txt_id">
+                        </div>
+                        <center>
+                            <input type="submit" value="Update Dealer" id="btnUpdateSubmit" onclick="buttonDisabled()" class="btn bg-gradient-primary text-light"></input>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function update_dealer(id, product_code, product_name, description, sale_amount, gst, hsn_sac) {
+        // Assuming your form has an id attribute set to "product_update_form"
+        var form = document.getElementById("product_update_form");
+        // Update form elements with the provided values
+        var id_val = form.elements["txt_id"];
+        id_val.value = id;
+
+        var product_code_val = form.elements["id_product_code"];
+        product_code_val.value = product_code ;
+        
+        var product_name_val = form.elements["id_product_name"];
+        product_name_val.value = product_name ;
+        
+        var product_code_val = form.elements["id_product_code"];
+        product_code_val.value = product_code ;
+        
+        var description_val = form.elements["id_description"];
+        description_val.value = description ;
+        
+        var sale_amount_val = form.elements["id_sale_amount"];
+        sale_amount_val.value = sale_amount ;
+        
+        var gst_val = form.elements["id_gst"];
+        gst_val.value = gst ;
+        
+        var hsn_sac_val = form.elements["id_hsn_sac"];
+        hsn_sac_val.value = hsn_sac ;
+    }
+</script>
+ 
+{% endblock containt %}

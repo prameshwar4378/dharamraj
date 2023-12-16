@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Data</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css">
+
+    <style>
+        @page {
+            size: A4;
+            padding: 10px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        body {
+            /* Adjust margin as needed */
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .custom-container {
+            max-width: 800px;
+            margin: auto;
+            font-size: 10px;
+            line-height: 22px;
+            font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+            color: #555;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+
+        .table th,
+        .table td {
+            border: 1px solid #ddd;
+            padding: 3px;
+            text-align: left;
+        }
+
+        .table th,
+        .table-footer {
+            background-color: #f2f2f2;
+        }
+        .td{
+            overflow: hidden;
+        }
+        .td-wrap {
+            white-space: normal; /* Allow text to wrap within this specific td */
+            overflow: hidden;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="custom-container">
+        <div class="header-container">
+           <center>
+            <h1>Trasaction Records</h1>
+           </center> 
+        </div>
+        <br>
+        <table class="table table-hover" style="background:white;">
+            {% if transaction_rec %}
+            <thead>
+                <tr>
+                    <th scope="col" class="text-center" style="width:5%">Sr.No</th>
+                    <th scope="col" class="text-center" style="width:17%">Transaction Date</th>
+                    <th scope="col" class="text-center td-wrap" style="width:18%">Invoice No</th>
+                    <th scope="col" class="text-center" style="width:32%">Dealer</th>
+                    <th scope="col" class="text-center" style="width:5%">Credit</th>
+                    <th scope="col" class="text-center" style="width:5%">Debit</th>
+                    <th scope="col" class="text-center" style="width:10%">Transaction Amount </th>
+                    <th scope="col" class="text-center" style="width:10%">Balance </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in transaction_rec %}
+                <tr>
+                    <td style="width:5%">{{ forloop.counter }}</td>
+                    <td style="width:17%">{{ r.transaction_date}}</td>
+                    <td style="width:16%;text-align:center;" class="td-wrap">{% if r.invoice_number %}{{ r.invoice_number}}{% else %}---{% endif %}</td>
+                    <td style="width:32%" class="text-left">{{ r.dealer.business_name }}</td>
+                    <td style="width:5%">{% if r.is_credit %}Credit{% endif %} </td>
+                    <td style="width:5%">{% if not r.is_credit %}Debit{% endif %} </td>
+                    <td style="width:10%; text-align:center;">{{r.amount}} </td>
+                    <td style="width:10%; text-align:center;">{% if r.balance < 0 %} <span style="background:red; color:white;">{{r.balance}}</span> {% else %}{{r.balance}}{% endif %} </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center">
+                    <h3>No Records Found</h3>
+                </td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+    
+</body>
+
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+<script>
+    {
+        %
+        for msg in messages %
+    } {
+        %
+        if msg.tags == 'success' %
+    }
+    swal({
+        title: "Good job!",
+        text: "{{msg}}",
+        icon: "success",
+        button: "OK",
+    });
+
+    {
+        % elif msg.tags == 'error' %
+    }
+    swal({
+        title: "Error",
+        text: "{{msg}}",
+        icon: "error",
+        button: "OK",
+    });
+
+    {
+        % elif msg.tags == 'warning' %
+    }
+    swal({
+        title: "Warning",
+        text: "{{msg}}",
+        icon: "warning",
+        button: "OK",
+    });
+
+    {
+        % elif msg.tags == 'info' %
+    }
+    swal({
+        title: "Oops",
+        text: "{{msg}}",
+        icon: "info",
+        button: "OK",
+    });
+
+    {
+        % endif %
+    } {
+        % endfor %
+    }
+</script>
+
+
+</html>

@@ -7,6 +7,7 @@ from Developer.models import *
 from .filters import *
 from django.contrib import messages
 import csv
+from django.contrib.staticfiles.storage import staticfiles_storage
 
 def export_invoice_list_pdf(request): 
     template = get_template('admin__export_invoice_list.html')  

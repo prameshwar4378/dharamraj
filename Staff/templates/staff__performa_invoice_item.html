@@ -1,0 +1,265 @@
+{% extends "staff_base.html" %}
+{% load crispy_forms_tags %}
+{% block containt %}
+<style>
+    .model-card{
+        border:2px solid gray;
+        background:red;
+        border-radius:10px;
+         color:#fff;
+    }  
+  </style>
+<div class="page-header">
+    <h3 class="page-title">
+        <span class="page-title-icon bg-gradient-primary text-white me-2">
+            <i class="mdi mdi-account"></i>
+        </span>Performa Invoice Items
+    </h3>
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb">
+            <li class=" ">
+                <span class=" bg-gradient-primary buttton " data-toggle="modal"
+                data-target="#model_generate_bill" style="padding:10px; border-radius:6px;cursor: pointer;color:white;">Export / Print</span>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="container">
+        <div class="row">
+        <div class="col-sm-6"><h4 class="alert alert-warning">Invoice No : {{invoice_details.performa_invoice_number}} </h4></div>
+        <div class="col-sm-6"><h4 class="alert alert-warning">Party Name : {{invoice_details.party_name}} </h4></div>
+    </div>
+        </div>
+    </div>
+
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="container" style="max-width:90%;">
+                <form method="POST" enctype="multipart/form-data" action="">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-sm-2">
+                            <label for="id_product_code" class="form-label requiredField">
+                                Search Product
+                            </label>
+                            <input type="text" name="product_code" oninput="get_details()" placeholder="Enter Product Code..." class="form-control" id="id_product_code">
+                        </div>
+                        <div class="col-sm-8">
+                            {{form.product|as_crispy_field}}
+                        </div> 
+                        <div class="col-sm-2">
+                            {{form.rate|as_crispy_field}}
+                        </div>
+                        <div class="col-sm-2">
+                            {{form.quantity|as_crispy_field}}
+                        </div>
+                        <div class="col-sm-2">
+                            {{form.gst_percent|as_crispy_field}}
+                        </div>
+                        <div class="col-sm-2">
+                            {{form.taxable_amount|as_crispy_field}}
+                        </div>
+                        <div class="col-sm-3">
+                            {{form.gst_amount|as_crispy_field}}
+                        </div>
+                        <div class="col-sm-3">
+                            {{form.total_amount|as_crispy_field}}
+                        </div> 
+                    </div> 
+                    <center> <input type="submit" value="Add" class="btn bg-gradient-primary text-light px-5 px-3">
+                      
+                    </center>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="model_generate_bill" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Print Bill</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body"> 
+                    <div class="row">
+                        <div class="row">
+                            <div class="col-md-3 mb-4">
+                                <div class="model-card" style="background: linear-gradient(90deg, rgba(30,41,91,1) 0%, rgba(16,135,159,1) 100%);">
+                                    <div class="card-body">
+                                        <h5 class="card-title">No Of Products</h5>
+                                        <hr>
+                                        <h3>{{total_products}}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="model-card" style="background: linear-gradient(90deg, rgba(64,30,91,1) 0%, rgba(159,16,146,1) 100%);">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Total Quantity</h5>
+                                        <hr>
+                                        <h3>{{total_quantity}}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="model-card" style="background: linear-gradient(90deg, rgba(64,30,91,1) 0%, rgba(159,16,146,1) 100%);">
+                                    <div class="card-body">
+                                        <h5 class="card-title">GST Amount</h5>
+                                        <hr>
+                                        <h3>{{total_gst_amount}}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="model-card" style="background: linear-gradient(90deg, rgba(91,30,56,1) 0%, rgba(224,8,114,1) 100%);">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Grand Total Amount</h5>
+                                        <hr>
+                                        <h3>{{grand_total_amount}}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                            <br><br>
+                            <hr>
+                            <div style="width:100%">
+                                
+                            <div class="alert alert-warning alert-dismissible">
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                Printing is limited to a single occurrence. Once a print request is initiated, additional print requests are not permissible. Kindly take note of this limitation
+                              </div>
+                            </div>
+                    <center>
+                        <a href="{% url "staff_print_performa_invoice" id %}" class="btn bg-gradient-primary text-light px-5 px-3" style="width:300px">Generate and Print Bills</a>
+                    </center>                     
+                </div>
+                
+            </div> 
+        </div>
+    </div>
+</div>
+
+<div class="container mt-3" style=" overflow:scroll;">
+    <table id="example" class="table table-striped " style="overflow:scroll; width:100%;min-width: max-content;">
+        <thead>
+            <tr class="bg-gradient-primary text-light ">
+                <th scope="col" class="text-center text-white" style="">Sr.No</th>
+                <th scope="col" class="text-center text-white" style="">Product</th> 
+                <th scope="col" class="text-center text-white" style="">Basic Amount</th>
+                <th scope="col" class="text-center text-white" style="">Quantity</th> 
+                <th scope="col" class="text-center text-white" style="">GST %</th> 
+                <th scope="col" class="text-center text-white" style="">GST Amount</th> 
+                <th scope="col" class="text-center text-white" style="">Total Amount</th> 
+                <th scope="col" class="text-center text-white" style="">Action</th> 
+            </tr>
+        </thead>
+        <tbody id="invoice_table_body">
+            {% if invoice_rec %}
+            {% for r in invoice_rec %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{r.product}}</td> 
+                <td class="text-center">{{r.rate}}</td>
+                <td class="text-center">{{r.quantity}}</td>
+                <td class="text-center">{{r.gst_percent}}</td>
+                <td class="text-center">&#8377; {{r.gst_amount}}.00</td>
+                <td class="text-center">&#8377; {{r.total_amount}}.00</td>
+                <td>
+                    <center>
+                        <a href="{% url "staff_delete_performa_invoice_item" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>
+                    </center>
+                </td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td></td>
+                <td></td> 
+                <td class="text-center"></td>
+                <td class="text-center"></td>
+                <td class="text-center"><b>Total</b></td>
+                <td class="text-center"><b>&#8377; {{total_gst_amount}}.00</b></td>
+                <td class="text-center"><b>&#8377; {{grand_total_amount}}.00</b></td>
+                <td>   </td>
+            </tr>
+            {% else %}
+
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script>
+    function get_details() {
+        var productCode = $('#id_product_code').val(); // Obtain the product code from the input field
+        var productId = $('#id_product').val(); // Obtain the product code from the input field
+
+        $.ajax({
+            url: '/staff/get_product_details/',  // Replace with your actual endpoint
+            data: {'product_code': productCode,'productId':productId},
+            type: 'GET',
+            success: function (data) {
+                // Update form fields with the fetched details
+                $('#id_product').val(data.product_name);
+                $('#id_quantity').val(1);
+                $('#id_rate').val(data.sale_amount);
+                $('#id_gst_percent').val(data.gst);
+
+                qty = 1;
+                rate = parseFloat(data.sale_amount);
+                gstPercent = parseFloat(data.gst);
+
+                // Calculate GST amount and total amount
+                var gstAmount = (rate * qty * gstPercent) / 100;
+                var totalAmount = rate * qty + gstAmount;
+                $('#id_taxable_amount').val(rate * qty);
+                $('#id_gst_amount').val(parseInt(gstAmount));
+                $('#id_total_amount').val(parseInt(totalAmount));
+ 
+            },
+            error: function (error) {
+                console.log('Error:', error);
+                
+                $('#id_product').val();
+                $('#id_quantity').val();
+                $('#id_rate').val();
+                $('#id_gst_percent').val();
+                $('#id_taxable_amount').val();
+                $('#id_gst_amount').val();
+                $('#id_total_amount').val();
+            }
+        });
+    }
+ 
+
+    function generate_amount(){
+        rate=document.getElementById('id_rate').value;
+        qty=document.getElementById('id_quantity').value;
+        gst_percent=document.getElementById('id_gst_percent').value;
+        
+        rate = parseFloat(rate);
+        qty = parseFloat(qty);
+        gstPercent = parseFloat(gst_percent);
+                
+        var gstAmount = (rate * qty * gstPercent) / 100;
+        var totalAmount = rate * qty + gstAmount;
+
+        $('#id_taxable_amount').val(rate * qty);
+        $('#id_gst_amount').val(parseInt(gstAmount));
+        $('#id_total_amount').val(parseInt(totalAmount));
+        
+    } 
+</script>
+
+
+ 
+{% endblock containt %}

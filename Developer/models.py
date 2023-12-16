@@ -66,7 +66,7 @@ class Purchase(models.Model):
 from django.utils import timezone
 
 class Invoice(models.Model):
-    invoice_number = models.CharField(max_length=50, db_index=True)
+    invoice_number = models.CharField(max_length=50,unique=True, db_index=True)
     dealer = models.ForeignKey(Dealer, on_delete=models.CASCADE, db_index=True)
     invoice_date = models.DateField(db_index=True, auto_now_add=True, auto_now=False)
     total_gst_amount = models.IntegerField(null=True, blank=True)
@@ -80,12 +80,17 @@ class Invoice(models.Model):
         if not self.invoice_number:
             # Auto-generate invoice_number
             prefix = 'DHRMJ'
-            year = timezone.now().year
-            next_invoice_number = Invoice.objects.filter(
-                invoice_number__startswith=f'{prefix}{year}'
-            ).count() + 1
-            self.invoice_number = f'{prefix}{year}{next_invoice_number:06d}'
-        
+
+            # Find the highest existing invoice number for the current year
+            last_invoice = Invoice.objects.select_related().order_by('-id').first()
+
+            if last_invoice:
+                last_number = int(last_invoice.invoice_number[-6:])
+                next_invoice_number = last_number + 1
+            else:
+                next_invoice_number = 1
+            # Set the new invoice number
+            self.invoice_number = f'{prefix}{next_invoice_number:06d}' 
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -152,6 +157,7 @@ PAYMENT_MODE = (
 )
 
 class Account(models.Model):
+    transaction_id=models.CharField(unique=True,null=True, max_length=50)
     dealer = models.ForeignKey(Dealer, on_delete=models.CASCADE, db_index=True)
     amount = models.PositiveIntegerField()
     payment_mode = models.CharField(max_length=50, choices=PAYMENT_MODE)
@@ -162,27 +168,64 @@ class Account(models.Model):
     invoice_number = models.CharField(max_length=50, blank=True, null=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_transactions')
     modified_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='modified_transactions')
-    
+     
+    def save(self, *args, **kwargs):
+        if not self.transaction_id:
+            # Auto-generate transactio id
+            prefix = 'TRDH'
 
+            # Find the highest existing transaction id for the current year
+            last_rec = Account.objects.select_related().order_by('-id').first()
 
-    # def save(self, *args, **kwargs):
-    #    # Retrieve the count and latest balance record for the dealer
-    #     acc_rec_count = Account.objects.filter(dealer=self.dealer).count()
-    #     if acc_rec_count:
-    #         balance_rec = Account.objects.filter(dealer=self.dealer).latest('id')
-    #     # Update the balance based on whether it's a credit or debit
-    #     if self.is_credit:
-    #         self.balance = balance_rec.balance + self.amount if acc_rec_count > 0 else self.amount
-    #     else:
-    #         self.balance = balance_rec.balance - self.amount if acc_rec_count > 0 else self.amount
-    #     # If a record is being deleted, invert the process
-    #     if kwargs.get('force_delete', False):
-    #         if self.is_credit:
-    #             self.balance = balance_rec.balance - self.amount if acc_rec_count > 0 else -self.amount
-    #         else:
-    #             self.balance = balance_rec.balance + self.amount if acc_rec_count > 0 else -self.amount
-    #     # Call the parent class's save method to save the changes
-    #     super(Account, self).save(*args, **kwargs)
- 
+            if last_rec:
+                last_number = int(last_rec.transaction_id[-6:])
+                next_transaction_number = last_number + 1
+            else:
+                next_transaction_number = 1
+            # Set the new transaction id number
+            self.transaction_id = f'{prefix}{next_transaction_number:06d}' 
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"Transaction #{self.amount} {self.payment_mode}"
+
+
+class PerformaInvoice(models.Model):
+    performa_invoice_number = models.CharField(max_length=50, db_index=True, unique=True)
+    party_name = models.CharField(max_length=50) 
+    address = models.TextField()
+    gst_number = models.CharField(max_length=20,null=True, blank=True)
+    date = models.DateField(db_index=True, auto_now_add=True, auto_now=False)
+    mobile=models.CharField(max_length=12)
+    state=models.ForeignKey(State, on_delete=models.CASCADE, db_index=True)
+    
+    def __str__(self):
+        return f"Invoice #{self.performa_invoice_number}"
+ 
+    def save(self, *args, **kwargs):
+        if not self.performa_invoice_number:
+            # Auto-generate invoice_number
+            prefix = 'PER-DH-'
+
+            # Find the highest existing invoice number for the current year
+            last_invoice = PerformaInvoice.objects.select_related().order_by('-id').first()
+
+            if last_invoice:
+                last_number = int(last_invoice.performa_invoice_number[-6:])
+                next_invoice_number = last_number + 1
+            else:
+                next_invoice_number = 1
+            # Set the new invoice number
+            self.performa_invoice_number = f'{prefix}{next_invoice_number:06d}' 
+        super().save(*args, **kwargs)
+     
+ 
+class PerformaInvoiceItem(models.Model):
+    performa_invoice = models.ForeignKey(PerformaInvoice, on_delete=models.CASCADE, db_index=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, db_index=True)
+    quantity = models.PositiveIntegerField()
+    rate = models.IntegerField()
+    gst_percent = models.FloatField()
+    gst_amount = models.IntegerField(null=True)
+    total_amount = models.IntegerField(null=True)
+    taxable_amount = models.IntegerField() 

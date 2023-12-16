@@ -1,0 +1,246 @@
+{% extends "staff_base.html" %}
+{% load crispy_forms_tags %}
+{% block containt %}
+<style>
+    /* Add your loading animation styles here */
+    .loading-spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top: 4px solid #3498db;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+<div class="page-header">
+    <h3 class="page-title">
+        <span class="page-title-icon bg-gradient-primary text-white me-2">
+            <i class="mdi mdi-account"></i>
+        </span> Add Stock
+    </h3>
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb">
+            <li class=" ">
+                <!--<span class=" bg-gradient-primary buttton " data-toggle="modal" data-target="#add_new_stock"
+                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;">Add Stock</span>-->
+
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="container" style="max-width:90%;">
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="add_new_stock" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" >
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Add New Stock</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+
+                    <form method="post" id="stock_creation_form" action="{% url 'staff_create_purchase' %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-sm-12">
+                                {{create_fm.product|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-12">
+                                {{create_fm.quantity|as_crispy_field}}
+                            </div>
+                        </div>
+                        <center>
+                            <input type="submit" id="btnCreateSubmit" onclick="buttonDisabled()" value="Add Product"
+                                class="btn bg-gradient-primary text-light"></input>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container mt-3" style=" overflow:scroll;">
+    <table id="example" class="table table-striped " style="overflow:scroll; width:100%;min-width: max-content;">
+        <thead>
+            <tr class="bg-gradient-primary text-light ">
+                <th scope="col" class="text-center text-white" style="">Sr.No</th>
+                <th scope="col" class="text-center text-white" style="">Product Code</th>
+                <th scope="col" class="text-center text-white" style="">Product Name</th>
+                <th scope="col" class="text-center text-white" style="">Quantity</th>
+                <th scope="col" class="text-center text-white" style="">Available Stock</th>
+                <th scope="col" class="text-center text-white" style="">Created Date</th>
+                <th scope="col" class="text-center text-white" style="">Action</th>
+            </tr>
+        </thead>
+        <tbody id="dealer_table_body">
+            {% if stock_rec %}
+            {% for r in stock_rec %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{r.product.product_code}}</td>
+                <td>{{r.product}}</td>
+                <td>{{r.quantity}}</td>
+                <td>{{r.product.available_stock}}</td>
+                <td>{{r.purchase_date}}</td>
+                <td>
+                    <center>
+                        <!--<a href="#" class="btn btn-success px-3" data-toggle="modal" data-target="#update_stock" onclick="update_stock('{{r.id}}','{{r.product}}','{{r.quantity}}')"><i class="mdi mdi-pencil"></i></a>-->
+
+                        <a href=" " data-toggle="modal" data-target="#delete_purchase_model" onclick="delete_purchase_record('{{r.id}}','{{r.product}}','{{r.quantity}}')" class="btn btn-danger px-3"><i
+                                class="mdi mdi-delete"></i></a>
+                    </center>
+                     
+                </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div class="pagination justify-content-center mt-4">
+    <ul class="pagination">
+        {% if stock_rec.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">&laquo;&laquo; first</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ stock_rec.previous_page_number }}">previous</a>
+            </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link">Page {{ stock_rec.number }} of {{ stock_rec.paginator.num_pages }}.</span>
+        </li>
+
+        {% if stock_rec.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ stock_rec.next_page_number }}">next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ stock_rec.paginator.num_pages }}">last &raquo;&raquo;</a>
+            </li>
+        {% endif %}
+    </ul>
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="delete_purchase_model" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger">
+                <h4 class="modal-title text-white" id="exampleModalLongTitle">Delete Stock Record</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-left">
+                <p class="alert alert-warning">If the record is deleted, the quantity will be deducted from the available stock. </p>
+                <h5>Are you sure to Delete <b> <span id="product_name_for_delete"></span> </b> with <b><span id="quantity_for_delete"></span></b> quantity. </h5>
+            </div>
+            <div class="modal-footer">
+                <a href="" id="id_delete_purchase_record"  class="btn btn-danger px-3">Yes</a> &nbsp;
+                <button type="button" class="btn btn-secondary bgcolor px-3" data-dismiss="modal">No</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--<div class="modal fade" id="update_stock" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Update Stock</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+
+                    <form method="post" id="purchase_update_form" action="">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-sm-6">
+                                {{update_fm.product|as_crispy_field}}
+                            </div>
+                            <div class="col-sm-6">
+                                {{update_fm.quantity|as_crispy_field}}
+                            </div>
+                            <input type="hidden" name="txt_id" id="txt_id">
+                        </div>
+                        <center>
+                            <input type="submit" value="Update Purchase" id="btnUpdateSubmit" onclick="buttonDisabled()"
+                                class="btn bg-gradient-primary text-light"></input>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>-->
+
+<script>
+    function update_stock(id, product, quantity) {
+        // Assuming your form has an id attribute set to "product_update_form"
+        //alert(product)
+        //alert(quantity)
+        var form = document.getElementById("purchase_update_form");
+        // Update form elements with the provided values
+        var id_val = form.elements["txt_id"];
+        id_val.value = id;
+
+        var product_val = form.elements["id_product"];
+        product_val.value = product;
+
+        var quantity_val = form.elements["id_quantity"];
+        quantity_val.value = quantity;
+    }
+
+    function delete_purchase_record(id, product, quantity) {
+        var delete_record = document.getElementById("id_delete_purchase_record");
+        delete_record.href = "/staff/delete_purchase/" + id + "";
+
+        var product_name_for_delete = document.getElementById("product_name_for_delete");
+        product_name_for_delete.textContent = product;
+        product_name_for_delete.style.color = "red";
+        var quantity_for_delete = document.getElementById("quantity_for_delete");
+        quantity_for_delete.textContent = quantity;
+        quantity_for_delete.style.color = "red";
+    }
+
+</script>
+
+{% endblock containt %}

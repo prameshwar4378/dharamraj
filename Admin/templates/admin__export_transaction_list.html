@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+{% load static %}
 
 <head>
     <meta charset="UTF-8">
@@ -19,6 +20,37 @@
 
         body {
             /* Adjust margin as needed */
+        }
+
+
+        .company-details {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            border-bottom: 2px solid #ccc;
+            background: #fff;
+            border-radius: 20px 20px 0px 0px;
+            flex-direction: row;
+        }
+
+        .logo img {
+            max-width: 240px;
+            max-height: 240px;
+        }
+
+        .info {
+            text-align: right;
+        }
+
+        .info h1 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .info p {
+            margin: 0px 0;
+            font-size: 1em;
+            color: #555;
         }
 
         .text-center {
@@ -51,12 +83,23 @@
         .table-footer {
             background-color: #f2f2f2;
         }
-        .td{
+
+        .td {
             overflow: hidden;
         }
+
         .td-wrap {
-            white-space: normal; /* Allow text to wrap within this specific td */
+            white-space: normal;
+            /* Allow text to wrap within this specific td */
             overflow: hidden;
+        }
+
+        .report-title {
+            width: 100%;
+            background: red;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
         }
     </style>
 
@@ -64,10 +107,39 @@
 
 <body>
     <div class="custom-container">
-        <div class="header-container">
-           <center>
-            <h1>Trasaction Records</h1>
-           </center> 
+        <div class="company-details ">
+            <table>
+                <tr>
+                    <td>
+
+                        <div class="logo">
+                            <!-- <img src="{% static 'assets/images/logo.svg' %}" alt="Company Logo"> -->
+                            <div class="report-title">
+                                <center>
+                                    <h3 style="font-size:20px;"><b>ledger report</b></h3>
+                                </center>
+                            </div>
+                            <p
+                                style="padding:5px 15px; border-radius:5px; box-shadow:0px 0px 10px -3px gray; margin:10px;">
+                                <b>From</b> : 12 Jan 2023 <b>To</b> 05 Feb 2023</p>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="info">
+                            <h1>DharamRaj Corporation</h1>
+                            <p style=""><b>Factory Address :</b> Bhumi Ind. Area-2, Plot-6, Rajkot Gondal Highway,
+                            </p>
+                            <p style="margin-top:-5px;">Veraval (Shapar) - 360024 Taluka - Kotda Sangani, Dist.-Rajkot
+                            </p>
+                            <p style="margin-top:-5px;"><b>GST Number:</b> 24AAVFD3427H1ZB</p>
+                            <p style="margin-top:-5px;"><b>Contact Details:</b> Rajkot (Gujarat) India. Mobile : +91
+                                8200461535</p>
+                        </div>
+                    </td>
+                </tr>
+
+
+            </table>
         </div>
         <br>
         <table class="table table-hover" style="background:white;">
@@ -89,12 +161,15 @@
                 <tr>
                     <td style="width:5%">{{ forloop.counter }}</td>
                     <td style="width:17%">{{ r.transaction_date}}</td>
-                    <td style="width:16%;text-align:center;" class="td-wrap">{% if r.invoice_number %}{{ r.invoice_number}}{% else %}---{% endif %}</td>
+                    <td style="width:16%;text-align:center;" class="td-wrap">
+                        {% if r.invoice_number %}{{ r.invoice_number}}{% else %}---{% endif %}</td>
                     <td style="width:32%" class="text-left">{{ r.dealer.business_name }}</td>
                     <td style="width:5%">{% if r.is_credit %}Credit{% endif %} </td>
                     <td style="width:5%">{% if not r.is_credit %}Debit{% endif %} </td>
                     <td style="width:10%; text-align:center;">{{r.amount}} </td>
-                    <td style="width:10%; text-align:center;">{% if r.balance < 0 %} <span style="background:red; color:white;">{{r.balance}}</span> {% else %}{{r.balance}}{% endif %} </td>
+                    <td style="width:10%; text-align:center;">{% if r.balance < 0 %} <span
+                            style="background:red; color:white;">{{r.balance}}</span> {% else %}{{r.balance}}{% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -107,7 +182,7 @@
             {% endif %}
         </table>
     </div>
-    
+
 </body>
 
 <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
@@ -127,7 +202,8 @@
     });
 
     {
-        % elif msg.tags == 'error' %
+        %
+        elif msg.tags == 'error' %
     }
     swal({
         title: "Error",
@@ -137,7 +213,8 @@
     });
 
     {
-        % elif msg.tags == 'warning' %
+        %
+        elif msg.tags == 'warning' %
     }
     swal({
         title: "Warning",
@@ -147,7 +224,8 @@
     });
 
     {
-        % elif msg.tags == 'info' %
+        %
+        elif msg.tags == 'info' %
     }
     swal({
         title: "Oops",
@@ -157,9 +235,11 @@
     });
 
     {
-        % endif %
+        %
+        endif %
     } {
-        % endfor %
+        %
+        endfor %
     }
 </script>
 

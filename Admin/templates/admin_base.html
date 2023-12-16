@@ -25,6 +25,7 @@
     
   </head>
   <style>
+
     #page-loader {
       position: fixed;
       top: 0;
@@ -249,7 +250,7 @@
               <div class="collapse" id="manage">
                 <ul class="nav flex-column sub-menu">
                   <li class="nav-item"> <a class="nav-link" href="{% url "admin_invoice_list" %}">Invoice Bill</a></li>
-                  <li class="nav-item"> <a class="nav-link" href="">Performa Invoice</a></li>
+                  <li class="nav-item"> <a class="nav-link" href="{% url "admin_performa_invoice_list" %}">Performa Invoice</a></li>
                 </ul>
               </div>
             </li>
@@ -272,14 +273,7 @@
                 <span class="menu-title">Product</span>
                 <i class="mdi mdi-cart menu-icon"></i>
               </a>
-            </li>  
-             
-            <li class="nav-item">
-              <a class="nav-link" href="{% url "admin_purchase_list" %}">
-                <span class="menu-title">Manage Stock</span>
-                <i class="mdi mdi-desktop-mac menu-icon"></i>
-              </a>
-            </li>  
+            </li>   
              
             <li class="nav-item">
               <a class="nav-link" href="{% url "admin_user_list" %}">

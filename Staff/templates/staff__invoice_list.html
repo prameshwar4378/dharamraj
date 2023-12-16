@@ -1,0 +1,297 @@
+{% extends "staff_base.html" %}
+{% load crispy_forms_tags %}
+{% block containt %}
+<style>
+     
+  </style>
+<div class="page-header">
+    <h3 class="page-title">
+        <span class="page-title-icon bg-gradient-primary text-white me-2">
+            <i class="mdi mdi-account"></i>
+        </span>Invoice Bills
+    </h3>
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb">
+            <li class=" ">
+                <span class=" bg-gradient-primary buttton " data-toggle="modal" data-target="#add_new_invoice"
+                    style="padding:10px; border-radius:6px;cursor: pointer;color:white;">New Invoice</span>
+
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="row">
+            <div class="container" style="max-width:97%;">
+                <div class="text-lg-end text-start"> <!-- Use text-lg-end for right alignment in large screens -->
+                    <a href="#" class="btn btn-table-header-buttons" data-toggle="modal" data-target="#filter_data"><i class="mdi mdi-filter"></i> Filter</a>
+                    <a href="#" class="btn btn-table-header-buttons" data-toggle="modal" data-target="#export_excel"><i class="mdi mdi-file-excel"></i> Excel</a>
+                    <a href="#" class="btn btn-table-header-buttons" data-toggle="modal" data-target="#export_pdf"><i class="mdi mdi-file-pdf"></i> PDF</a> 
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<hr>
+
+<div class="modal fade" id="add_new_invoice" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Create New Invoice</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                
+                    <form method="post" id="invoice_creation_form" action="{% url 'staff_create_invoice' %}">
+                        {% csrf_token %}
+                        <div class="row"> 
+                            <div class="col-sm-12">
+                                 {{create_invoice_fm.dealer|as_crispy_field}}
+                            </div> 
+                        </div>
+                        <center>
+                            <input type="submit"  id="btnCreateSubmit" onclick="buttonDisabled()" value="Create Invoice" class="btn bg-gradient-primary text-light"></input>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="filter_data" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Filter Records</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                
+                    <form action="" method="GET">
+                        {% csrf_token %}
+                        <div class="row">
+                                <div class="col-sm-6">{{filter.form.invoice_number|as_crispy_field}}</div>
+                                <div class="col-sm-6">{{filter.form.dealer|as_crispy_field}}</div>
+                                <div class="col-sm-6">{{filter.form.start_date|as_crispy_field}}</div>
+                                <div class="col-sm-6">{{filter.form.end_date|as_crispy_field}}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">{{filter.form.grand_total__gte|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.grand_total__lte|as_crispy_field}}</div>
+                        </div> 
+                        <div class="row text-center">
+                            <div class="col-sm-12 py-2 text-center"><input type="submit" value="Apply Filter" class="btn btn-primary bg-gradient-primary mt-4" style="width:30%"></div>            
+                        </div>
+                        </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="export_pdf" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Export PDF</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <form method="GET" action="{% url "staff_export_invoice_list_pdf" %}">
+                        {% csrf_token %}
+                        <div class="row">
+                                <div class="col-sm-6">{{filter.form.invoice_number|as_crispy_field}}</div>
+                                <div class="col-sm-6">{{filter.form.dealer|as_crispy_field}}</div>
+                                <div class="col-sm-6">{{filter.form.start_date|as_crispy_field}}</div>
+                                <div class="col-sm-6">{{filter.form.end_date|as_crispy_field}}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">{{filter.form.grand_total__gte|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.grand_total__lte|as_crispy_field}}</div>
+                        </div> 
+                        <div class="row text-center">
+                            <div class="col-sm-12 py-2 text-center"><input type="submit" value="Export PDF" class="btn btn-primary bg-gradient-primary mt-4" style="width:30%"></div>            
+                        </div>
+                        </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="export_excel" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Export Excel</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <form method="GET" action="{% url "staff_export_invoice_list_csv" %}">
+                        {% csrf_token %}
+                        <div class="row">
+                                <div class="col-sm-6">{{filter.form.invoice_number|as_crispy_field}}</div>
+                                <div class="col-sm-6">{{filter.form.dealer|as_crispy_field}}</div>
+                                <div class="col-sm-6">{{filter.form.start_date|as_crispy_field}}</div>
+                                <div class="col-sm-6">{{filter.form.end_date|as_crispy_field}}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">{{filter.form.grand_total__gte|as_crispy_field}}</div>
+                            <div class="col-sm-6">{{filter.form.grand_total__lte|as_crispy_field}}</div>
+                        </div> 
+                        <div class="row text-center">
+                            <div class="col-sm-12 py-2 text-center"><input type="submit" value="Export CSV" class="btn btn-primary bg-gradient-primary mt-4" style="width:30%"></div>            
+                        </div>
+                        </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-3" style=" overflow:scroll;">
+    <table id="myTable" class="table table-striped " style="overflow:scroll; width:100%;min-width: max-content;">
+        <thead>
+            <tr class="bg-gradient-primary text-light ">
+                <th scope="col" class="text-center text-white" style="">Sr.No</th>
+                <th scope="col" class="text-center text-white" style="">Invoice Number</th> 
+                <th scope="col" class="text-center text-white" style="">Dealer Name</th>
+                <th scope="col" class="text-center text-white" style="">Total Amount</th> 
+                <th scope="col" class="text-center text-white" style="">Invoice Date </th> 
+                <th scope="col" class="text-center text-white" style="">Action</th> 
+            </tr>
+        </thead>
+        <tbody id="invoice_table_body">
+            {% if invoice_rec %}
+            {% for r in invoice_rec %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{r.invoice_number}}</td>
+                <td>{{r.dealer}}</td> 
+                <td class="text-center">{% if r.grand_total %} &#8377; {{r.grand_total}}.00 {% else %}---{% endif %}</td>
+                <td class="text-center">{{r.invoice_date}}</td>
+                <td>
+                    <center>
+                        {% if r.is_added_in_account %}
+                        <span href="" class="btn bg-secondary text-light px-3">Added Account</span>
+
+                        {% else %}
+                        <a href="{% url "staff_add_invoice_in_account" r.id %}" class="btn btn-danger text-secondary px-3">Add to Account</a>
+                        {% endif %}
+                        <a href="{% url "staff_invoice_item_list" r.id %}" class="btn btn-primary px-3">Products</a>
+                        
+                        <a href="#" class="btn btn-success px-3" data-toggle="modal" data-target="#update_invoice" onclick="update_invoice('{{r.id}}','{{r.dealer.id}}','{{r.invoice_date}}')"><i class="mdi mdi-pencil"></i></a>
+
+                        <!--<a href="{% url "staff_delete_invoice" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>-->  
+                    </center>
+                </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+ 
+
+<div class="modal fade" id="update_invoice" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width:1000px;">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-primary text-light ">
+                <h5 class="modal-title" id="exampleModalLongTitle">Update Invoice</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                
+                    <form method="post" id="invoice_update_form" action="{% url "staff_update_invoice" %}">
+                        {% csrf_token %}
+                        <div class="row">  
+                           <div class="col-sm-12">
+                                {{create_invoice_fm.dealer|as_crispy_field}}
+                           </div> 
+                            <input type="hidden" name="txt_id" id="txt_id">
+                        </div>
+                        <center>
+                            <input type="submit" value="Update Invoice" id="btnUpdateSubmit" onclick="buttonDisabled()" class="btn bg-gradient-primary text-light"></input>
+                        </center>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="pagination justify-content-center mt-4">
+    <ul class="pagination">
+        {% if invoice_rec.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">&laquo;&laquo; first</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ invoice_rec.previous_page_number }}">previous</a>
+            </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link">Page {{ invoice_rec.number }} of {{ invoice_rec.paginator.num_pages }}.</span>
+        </li>
+
+        {% if invoice_rec.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ invoice_rec.next_page_number }}">next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ invoice_rec.paginator.num_pages }}">last &raquo;&raquo;</a>
+            </li>
+        {% endif %}
+    </ul>
+</div>
+
+<script>
+    function update_invoice(id, dealer, invoice_date) {
+        
+        var id_val = document.getElementById("invoice_update_form").elements["txt_id"];
+        id_val.value = id;
+ 
+        var dealer_val = document.getElementById("invoice_update_form").elements["id_dealer"];
+        dealer_val.value = dealer;
+
+        var formattedDate = new Date(invoice_date);
+        formattedDate = formattedDate.toISOString().split('T')[0];
+    
+        var invoice_date_val = document.getElementById("invoice_update_form").elements["id_invoice_date"];
+        invoice_date_val.value = formattedDate;
+  
+    }
+ 
+</script>
+
+  
+{% endblock containt %}

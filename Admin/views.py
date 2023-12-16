@@ -7,26 +7,53 @@ from .filters import *
 from django.contrib import messages
 from django.http import Http404
 # Create your views here.
-from django.db.models import Sum
-from django.db.models import Sum
-from datetime import date,timedelta
+from django.db.models import Sum, F, ExpressionWrapper, fields
+from datetime import date,timedelta,datetime, timedelta
 from django.db.models.functions import Coalesce
+from django.contrib.auth.decorators import login_required
 
+from django.contrib.auth.decorators import login_required, user_passes_test
 
-def index(request):
-    return render(request,'admin_base.html')
+def is_admin(user):
+    return user.is_authenticated and hasattr(user, 'is_admin') and user.is_admin
 
+def admin_required(view_func):
+    decorated_view_func = login_required(user_passes_test(is_admin, login_url='/accounts/login')(view_func))
+    return decorated_view_func
 
+ 
+@admin_required
 def dashboard(request):
     # Get today's date
     today_date = date.today()
-
+    end_of_day = today_date + timedelta(days=1)
+    
     total_grand_total_today = Invoice.objects.filter(invoice_date=today_date).aggregate(Sum('grand_total'))['grand_total__sum'] or 0
     total_gst_amount_today = Invoice.objects.filter(invoice_date=today_date).aggregate(Sum('total_gst_amount'))['total_gst_amount__sum'] or 0
     total_quantity_today = InvoiceItem.objects.filter(invoice__invoice_date=today_date).aggregate(Sum('quantity'))['quantity__sum'] or 0
     total_invoices_today = Invoice.objects.filter(invoice_date=today_date).count()
 
+    total_credited_amount_today = Account.objects.filter(
+        is_credit=True, 
+        transaction_date__range=(today_date, end_of_day)
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
 
+    total_debited_amount_today = Account.objects.filter(
+        is_credit=False, 
+        transaction_date__range=(today_date, end_of_day)
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    print(total_credited_amount_today) 
+
+    total_credited_amount = Account.objects.filter(is_credit=True).aggregate(Sum('amount'))['amount__sum'] or 0
+    total_debited_amount = Account.objects.filter(is_credit=False).aggregate(Sum('amount'))['amount__sum'] or 0
+    total_balance = Account.objects.aggregate(
+        total_balance=Sum(ExpressionWrapper(
+            F('amount') * F('is_credit') - F('amount') * ~F('is_credit'),
+            output_field=fields.FloatField()
+        ))
+    )['total_balance'] or 0
+ 
     start_date = date.today() - timedelta(days=30)
     top_five_dealers = Invoice.objects.filter(invoice_date__gte=start_date).values('dealer__business_name').annotate(total_amount=Coalesce(Sum('grand_total'), 0)).order_by('-total_amount')[:5]
     top_five_dealer_total_amount = [item['total_amount'] for item in top_five_dealers]
@@ -42,22 +69,31 @@ def dashboard(request):
         'total_gst_amount_today': total_gst_amount_today,
         'total_quantity_today': total_quantity_today,
         'total_invoices_today': total_invoices_today,
+        'total_credited_amount_today': total_credited_amount_today,
+        'total_debited_amount_today': total_debited_amount_today,
+        # 'total_balance_today': total_balance_today,
         'top_five_dealer_total_amount': top_five_dealer_total_amount,
         'top_five_dealer_name': top_five_dealer_name,
         'top_five_sale_product_quantity': top_five_sale_product_quantity,
         'top_five_sale_product_labels': top_five_sale_product_labels,
+        'total_credited_amount': total_credited_amount,
+        'total_debited_amount': total_debited_amount,
+        'total_balance': total_balance,
     }
 
     return render(request, 'admin__dashboard.html', context)
 
 
 
+@admin_required
 def user_list(request):
-    user_rec=CustomUser.objects.filter(is_admin=False)
+    user_rec=CustomUser.objects.filter(is_admin=False,is_superuser=False)
     if request.method == 'POST':
         form = User_Creation(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            fm = form.save(commit=False)
+            fm.is_staff = True  # Associate the form with the specific invoice
+            fm.save()
             messages.success(request,'User Created Successfully ...!')
             return redirect('/admin/user_list/')
     else:
@@ -66,6 +102,7 @@ def user_list(request):
     return render(request, 'admin__user_list.html', {'form': form,'user_rec':user_rec})
  
   
+@admin_required
 def update_user(request,id):
     if request.method=="POST":
         pi=CustomUser.objects.get(pk=id)
@@ -80,6 +117,7 @@ def update_user(request,id):
     return render(request,'admin__update_user.html',{'form':fm})   
 
 
+@admin_required
 def delete_user(request, id):
     try:
         user = get_object_or_404(CustomUser, id=id)
@@ -90,17 +128,34 @@ def delete_user(request, id):
         return render(request, '404.html')
 
 
+@admin_required
 def dealer_list(request):
     try:
         dealer_rec = Dealer.objects.select_related().order_by('dealer_name')
+
+        # Add pagination
+        page = request.GET.get('page', 1)
+        paginator = Paginator(dealer_rec, 25)  # Show 10 dealers per page
+        try:
+            dealer_rec = paginator.page(page)
+        except PageNotAnInteger:
+            dealer_rec = paginator.page(1)
+        except EmptyPage:
+            dealer_rec = paginator.page(paginator.num_pages)
+
         create_dealer_fm = DealerCreationForm()
         update_dealer_fm = DealerUpdateForm()
-        context = {'dealer_rec': dealer_rec, 'create_dealer_fm': create_dealer_fm, 'update_dealer_fm': update_dealer_fm}
+        context = {
+            'dealer_rec': dealer_rec,
+            'create_dealer_fm': create_dealer_fm,
+            'update_dealer_fm': update_dealer_fm
+        }
         return render(request, 'admin__dealer_list.html', context)
     except Exception as e:
         # Log the exception if needed
         return render(request, '404.html')
 
+@admin_required
 def create_dealer(request):
     try:
         form = DealerCreationForm(request.POST)
@@ -115,6 +170,7 @@ def create_dealer(request):
         # Log the exception if needed
         return render(request, '404.html')
 
+@admin_required
 def update_dealer(request): 
     try:
         if request.method == 'POST':
@@ -133,6 +189,7 @@ def update_dealer(request):
         # Log the exception if needed
         return render(request, '404.html')
 
+@admin_required
 def delete_dealer(request, id):
     try:
         dealer = get_object_or_404(Dealer, id=id)
@@ -143,17 +200,21 @@ def delete_dealer(request, id):
         return render(request, '404.html')
 
 
+@admin_required
 def product_list(request):
     try:
         product_rec = Product.objects.select_related()
         create_product_fm = ProductCreationForm()
         update_product_fm = ProductUpdateForm()
-        context = {'product_rec': product_rec, 'create_product_fm': create_product_fm, 'update_product_fm': update_product_fm}
+        add_stock = PurchaseCreationForm()
+        update_stock = PurchaseUpdateForm()
+        context = {'product_rec': product_rec,'add_stock':add_stock,'update_stock':update_stock, 'create_product_fm': create_product_fm, 'update_product_fm': update_product_fm}
         return render(request, 'admin__product_list.html', context)
     except Exception as e:
         # Log the exception if needed
         return render(request, '404.html')
 
+@admin_required
 def create_product(request):
     try:
         form = ProductCreationForm(request.POST)
@@ -169,6 +230,7 @@ def create_product(request):
         messages.error(request, f'An error occurred: {str(e)}')
         return render(request, '404.html')
     
+@admin_required
 def update_product(request): 
     try:
         if request.method == 'POST':
@@ -189,6 +251,7 @@ def update_product(request):
         # Log the exception if needed
         return render(request, '404.html')
 
+@admin_required
 def delete_product(request, id):
     try:
         product = get_object_or_404(Product, id=id)
@@ -198,9 +261,21 @@ def delete_product(request, id):
     except Http404:
         return render(request, '404.html')
 
+@admin_required
 def purchase_list(request):
     try:
         stock_rec = Purchase.objects.select_related().order_by('-id')
+
+        # Add pagination
+        page = request.GET.get('page', 1)
+        paginator = Paginator(stock_rec, 25)  # Show 10 purchases per page
+        try:
+            stock_rec = paginator.page(page)
+        except PageNotAnInteger:
+            stock_rec = paginator.page(1)
+        except EmptyPage:
+            stock_rec = paginator.page(paginator.num_pages)
+
         create_fm = PurchaseCreationForm()
         update_fm = PurchaseUpdateForm()
         context = {'stock_rec': stock_rec, 'create_fm': create_fm, 'update_fm': update_fm}
@@ -208,7 +283,9 @@ def purchase_list(request):
     except Exception as e:
         # Log the exception if needed
         return render(request, '404.html')
+    
 
+@admin_required
 def create_purchase(request):
     try:
         form = PurchaseCreationForm(request.POST)
@@ -218,7 +295,7 @@ def create_purchase(request):
         else:
             error_message = ', '.join([f"{field}: {error[0]}" for field, error in form.errors.items()])
             messages.warning(request, error_message)
-        return redirect('/admin/purchase_list/')
+        return redirect('/admin/product_list/')
     except Exception as e:
         # Log the exception if needed
         return render(request, '404.html')
@@ -239,6 +316,7 @@ def create_purchase(request):
 #         messages.warning(request, 'Form Not Submited : Something Missing')
 #         return redirect('/admin/purchase_list/')
     
+@admin_required
 def delete_purchase(request, id):
     try:
         purchase = get_object_or_404(Purchase, id=id)
@@ -274,19 +352,37 @@ def delete_purchase(request, id):
  
  
 
-
+@admin_required
 def invoice_list(request):
     try:
         rec = Invoice.objects.select_related().order_by('-id')
-        Filter=Invoice_List_Filter(request.GET, queryset=rec)
-        invoice_rec=Filter.qs 
+        Filter = Invoice_List_Filter(request.GET, queryset=rec)
+        invoice_rec = Filter.qs 
+
+        # Add pagination
+        page = request.GET.get('page', 1)
+        paginator = Paginator(invoice_rec, 25)  # Show 10 invoices per page
+        try:
+            invoice_rec = paginator.page(page)
+        except PageNotAnInteger:
+            invoice_rec = paginator.page(1)
+        except EmptyPage:
+            invoice_rec = paginator.page(paginator.num_pages)
+
         create_invoice_fm = InvoiceCreationForm()
         update_invoice_fm = InvoiceUpdateForm()
-        context = {'invoice_rec': invoice_rec, 'create_invoice_fm': create_invoice_fm, 'update_invoice_fm': update_invoice_fm,'filter':Filter}
+        context = {
+            'invoice_rec': invoice_rec,
+            'create_invoice_fm': create_invoice_fm,
+            'update_invoice_fm': update_invoice_fm,
+            'filter': Filter
+        }
         return render(request, 'admin__invoice_list.html', context)
     except Exception as e:
         return render(request, '404.html')
+    
 
+@admin_required
 def create_invoice(request):
     try:
         form = InvoiceCreationForm(request.POST)
@@ -300,8 +396,9 @@ def create_invoice(request):
         return redirect('/admin/invoice_list/')
     except Exception as e:
         # Log the exception if needed
-        return render(request, '404.html')
+        return render(request, '404.html') 
 
+@admin_required
 def update_invoice(request): 
     try:
         if request.method == 'POST':
@@ -323,6 +420,7 @@ def update_invoice(request):
         return render(request, '404.html')
 
 
+@admin_required
 def delete_invoice(request, id):
     try:
         invoice = get_object_or_404(Invoice, id=id)
@@ -340,6 +438,7 @@ def delete_invoice(request, id):
     except Http404:
         return render(request, '404.html')
 
+@admin_required
 def add_invoice_in_account(request,id):
     try:
         invoice=get_object_or_404(Invoice, id=id)
@@ -375,6 +474,7 @@ def add_invoice_in_account(request,id):
     except Exception as e:
             return render(request, '404.html')
         
+@admin_required
 def invoice_item_list(request, id):
     request.session['session_invoice_id']=id
     records = InvoiceItem.objects.filter(invoice=id)
@@ -407,6 +507,7 @@ def invoice_item_list(request, id):
     return render(request, 'admin__manage_invoice_item.html', context)
 
 
+@admin_required
 def delete_invoice_item(request, id):
     try:
         invoice = get_object_or_404(InvoiceItem, id=id)
@@ -418,6 +519,7 @@ def delete_invoice_item(request, id):
         return render(request, '404.html')
 
 
+@admin_required
 def get_product_details(request):
     product_code = request.GET.get('product_code', '')
     product_id = request.GET.get('productId', '')  # Use 'product_id' to match the parameter in your AJAX request
@@ -442,6 +544,7 @@ def get_product_details(request):
 
 import openpyxl
 
+@admin_required
 def dealer_bulk_creation(request):
     if request.method == "POST":
         excel_file = request.FILES.get('excel_file')
@@ -493,6 +596,7 @@ def dealer_bulk_creation(request):
         return redirect('/admin/dealer_list/')
 
 
+@admin_required
 def product_bulk_creation(request):
     if request.method == "POST":
         excel_file = request.FILES.get('excel_file')
@@ -541,7 +645,8 @@ def product_bulk_creation(request):
 
 
 
-def print_all_bills_formate(request, id):
+@admin_required
+def print_all_invoice_formate(request, id):
     try:
         invoice_details = Invoice.objects.get(id=id)
         item_rec = InvoiceItem.objects.filter(invoice=id)
@@ -567,24 +672,46 @@ def print_all_bills_formate(request, id):
                    'total_taxable_amount':total_taxable_amount,
                    'gst_type':gst_type,
                    }
-        return render(request, 'admin__print_all_bills_formate.html', context)
+        return render(request, 'admin__print_all_invoice_formate.html', context)
     except Invoice.DoesNotExist:
         return render(request, '404.html')
     
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+
+@admin_required
 def transaction_list(request):
     # try: 
         rec = Account.objects.select_related().order_by('-id')
-        Filter=Transaction_List_Filter(request.GET, queryset=rec)
-        transaction_rec=Filter.qs 
+        Filter = Transaction_List_Filter(request.GET, queryset=rec)
+        transaction_rec = Filter.qs 
+
+        # Add pagination
+        page = request.GET.get('page', 1)
+        paginator = Paginator(transaction_rec, 25)  # Show 10 transactions per page
+        try:
+            transaction_rec = paginator.page(page)
+        except PageNotAnInteger:
+            transaction_rec = paginator.page(1)
+        except EmptyPage:
+            transaction_rec = paginator.page(paginator.num_pages)
+
         latest_transaction = Account.objects.order_by('-id').first()
         latest_transaction_id = latest_transaction.id if latest_transaction else None
         create_transaction_fm = CreateTransactionForm()
         update_transaction_fm = UpdateTransactionForm() 
-        context = {'latest_transaction_id':latest_transaction_id,'transaction_rec': transaction_rec, 'create_transaction_fm': create_transaction_fm, 'update_transaction_fm': update_transaction_fm,'filter':Filter}
+        context = {
+            'latest_transaction_id': latest_transaction_id,
+            'transaction_rec': transaction_rec,
+            'create_transaction_fm': create_transaction_fm,
+            'update_transaction_fm': update_transaction_fm,
+            'filter': Filter
+        }
         return render(request, 'admin__transactions_list.html', context)
     # except Exception as e:
     #     return render(request, '404.html')
 
+
+@admin_required
 def create_transaction(request):
     try:
         if request.method == 'POST':
@@ -617,6 +744,7 @@ def create_transaction(request):
         return render(request, '404.html')
 
     
+@admin_required
 def update_transaction(request): 
     try:
         if request.method == 'POST':
@@ -646,6 +774,7 @@ def update_transaction(request):
         # Log the exception if needed
         return render(request, '404.html')
 
+@admin_required
 def delete_transaction(request, id):
     try:
         # trans_for_invoice = get_object_or_404(Account, id=id)
@@ -658,8 +787,18 @@ def delete_transaction(request, id):
         return redirect('/admin/troubleshoot_transactions_for_balance/')
     except Http404:
         return render(request, '404.html')
+ 
+@admin_required
+def print_transactions_receipt(request,id):
+    try: 
+        data=Account.objects.get(id=id)
+        context={'data':data}
+        return render(request, 'admin__print_payment_received_slip.html', context)
+    except Exception as e:
+        return render(request, '404.html')
 
 
+@admin_required
 def troubleshoot_transactions_for_balance(request):
     try:
 
@@ -686,3 +825,142 @@ def troubleshoot_transactions_for_balance(request):
         return redirect('/admin/transaction_list/')
     except Exception as e:
         return render(request, '404.html')
+    
+
+
+
+
+@admin_required
+def performa_invoice_list(request):
+    try:
+        rec = PerformaInvoice.objects.select_related().order_by('-id')
+        Filter=Performa_Invoice_List_Filter(request.GET, queryset=rec)
+        invoice_rec=Filter.qs 
+        create_invoice_fm = PerformaInvoiceCreationForm()
+        update_invoice_fm = PerformaInvoiceUpdateForm()
+        context = {'invoice_rec': invoice_rec, 'create_invoice_fm': create_invoice_fm, 'update_invoice_fm': update_invoice_fm,'filter':Filter}
+        return render(request, 'admin__performa_invoice_list.html', context)
+    except Exception as e:
+        return render(request, '404.html')
+
+@admin_required
+def create_performa_invoice(request):
+    try:
+        form = PerformaInvoiceCreationForm(request.POST)
+        if form.is_valid():
+            saved_instance = form.save()
+            saved_id = saved_instance.id
+            return redirect(f'/admin/performa_invoice_item_list/{saved_id}')
+        else:
+            error_message = ', '.join([f"{field}: {error[0]}" for field, error in form.errors.items()])
+            messages.warning(request, error_message)
+        return redirect('/admin/performa_invoice_list/')
+    except Exception as e:
+        # Log the exception if needed
+        return render(request, '404.html')
+
+@admin_required
+def update_performa_invoice(request): 
+    try:
+        if request.method == 'POST':
+            performa_invoice_id = request.POST.get('txt_id') 
+            performa_invoice = get_object_or_404(PerformaInvoice, id=performa_invoice_id)
+            form = PerformaInvoiceUpdateForm(request.POST, instance=performa_invoice)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Invoice Updated Successfully.')
+                return redirect('/admin/performa_invoice_list/')
+            else:
+                error_message = ', '.join([f"{field}: {error[0]}" for field, error in form.errors.items()])
+                messages.warning(request, error_message)
+        else:
+            messages.warning(request, 'Form Not Updated: Something Missing')
+            return redirect('/admin/invoice_list/')
+    except Exception as e:
+        # Log the exception if needed
+        return render(request, '404.html')
+
+
+@admin_required
+def delete_performa_invoice(request, id):
+    try:
+        performa_invoice = get_object_or_404(PerformaInvoice, id=id)
+        with transaction.atomic():
+            performa_invoice.delete()
+            messages.success(request, 'Performa Invoice Deleted Successfully...')
+            return redirect('/admin/performa_invoice_list/')
+    except Http404:
+        return render(request, '404.html')
+
+
+
+     
+@admin_required
+def performa_invoice_item_list(request, id):
+    request.session['session_invoice_id']=id
+    records = PerformaInvoiceItem.objects.filter(performa_invoice=id)
+    sale_rec = PerformaInvoice.objects.get(id=id) 
+    form = PerformaInvoiceProductForm()
+    if request.method == 'POST': 
+        form = PerformaInvoiceProductForm(request.POST)
+        if form.is_valid(): 
+            fm = form.save(commit=False)
+            fm.performa_invoice = sale_rec  
+            fm.save()
+            messages.success(request, 'Item Added Successfully')
+            return redirect(f'/admin/performa_invoice_item_list/{id}')
+        else:
+            messages.warning(request, 'Item Not Added')
+
+    total_quantity = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).aggregate(total_quantity=Sum('quantity'))['total_quantity']
+    total_gst_amount = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).aggregate(total_gst_amount=Sum('gst_amount'))['total_gst_amount']
+    grand_total_amount = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).aggregate(total_total_amount=Sum('total_amount'))['total_total_amount']
+    total_products = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).count()
+ 
+    context = {'form': form,'id':id, 'invoice_rec': records,'total_quantity':total_quantity,'total_gst_amount':total_gst_amount,'grand_total_amount':grand_total_amount,'total_products':total_products,'invoice_details':sale_rec}
+    return render(request, 'admin__performa_invoice_item.html', context)
+
+
+@admin_required
+def delete_performa_invoice_item(request, id):
+    try:
+        invoice = get_object_or_404(PerformaInvoiceItem, id=id)
+        invoice.delete()
+        id=request.session.get('session_invoice_id')
+        messages.success(request, 'Product Deleted Successfully.')
+        return redirect(f'/admin/performa_invoice_item_list/{id}')
+    except Http404:
+        return render(request, '404.html')
+
+
+@admin_required
+def print_performa_invoice(request, id):
+    try:
+        invoice_details = PerformaInvoice.objects.get(id=id)
+        item_rec = PerformaInvoiceItem.objects.filter(performa_invoice=id)
+         
+        total_quantity = PerformaInvoiceItem.objects.filter(performa_invoice=invoice_details).aggregate(total_quantity=Sum('quantity'))['total_quantity']
+        total_gst_amount = PerformaInvoiceItem.objects.filter(performa_invoice=invoice_details).aggregate(total_gst_amount=Sum('gst_amount'))['total_gst_amount']
+        grand_total_amount = PerformaInvoiceItem.objects.filter(performa_invoice=invoice_details).aggregate(total_total_amount=Sum('total_amount'))['total_total_amount']
+        total_rate = item_rec.aggregate(total_rate=Sum('rate'))['total_rate']
+        total_taxable_amount = item_rec.aggregate(total_taxable_amount=Sum('taxable_amount'))['total_taxable_amount']
+
+        if not str(invoice_details.state) == "Gujarat":
+            gst_type="IGST"
+        else: 
+            gst_type="CGST / SGST"
+ 
+
+        context = {'invoice_details': invoice_details, 
+                   'item_rec': item_rec,
+                   'total_quantity':total_quantity,
+                   'total_gst_amount':total_gst_amount,
+                   'grand_total_amount':grand_total_amount,
+                   'total_rate':total_rate,
+                   'total_taxable_amount':total_taxable_amount,
+                   'gst_type':gst_type,
+                   }
+        return render(request, 'admin__print_performa_invoice.html', context)
+    except Invoice.DoesNotExist:
+        return render(request, '404.html')
+    

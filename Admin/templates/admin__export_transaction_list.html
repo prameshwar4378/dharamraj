@@ -96,8 +96,7 @@
 
         .report-title {
             width: 100%;
-            background: red;
-            color: white;
+            color: black;
             padding: 10px;
             border-radius: 10px;
         }
@@ -115,13 +114,14 @@
                         <div class="logo">
                             <!-- <img src="{% static 'assets/images/logo.svg' %}" alt="Company Logo"> -->
                             <div class="report-title">
-                                <center>
-                                    <h3 style="font-size:20px;"><b>ledger report</b></h3>
-                                </center>
+                                <h3 style="font-size:20px;"><b>Account Ledger</b></h3>
                             </div>
-                            <p
-                                style="padding:5px 15px; border-radius:5px; box-shadow:0px 0px 10px -3px gray; margin:10px;">
-                                <b>From</b> : 12 Jan 2023 <b>To</b> 05 Feb 2023</p>
+                            <p style="padding:5px 15px; border-radius:5px; box-shadow:0px 0px 10px -3px gray; margin:10px;">
+
+                                <p><b>From : </b> {{start_date}}</p>
+                                <p><b>To : </b> {{end_date}}</p>
+ 
+
                         </div>
                     </td>
                     <td>

@@ -196,13 +196,15 @@
                 <td>
                     <center>
                         {% if r.is_added_in_account %}
-                        <span href="" class="btn bg-secondary text-light px-3">Added Account</span>
-
                         {% else %}
                         <a href="{% url "staff_add_invoice_in_account" r.id %}" class="btn btn-danger text-secondary px-3">Add to Account</a>
                         {% endif %}
+
+                        {% if r.is_added_in_account %}
+                        <span href="" class="btn bg-secondary text-light px-3">Products</span>
+                        {% else %}
                         <a href="{% url "staff_invoice_item_list" r.id %}" class="btn btn-primary px-3">Products</a>
-                        
+                        {% endif %}
                         <a href="#" class="btn btn-success px-3" data-toggle="modal" data-target="#update_invoice" onclick="update_invoice('{{r.id}}','{{r.dealer.id}}','{{r.invoice_date}}')"><i class="mdi mdi-pencil"></i></a>
 
                         <!--<a href="{% url "staff_delete_invoice" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>-->  

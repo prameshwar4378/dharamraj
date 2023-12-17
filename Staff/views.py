@@ -8,10 +8,12 @@ from django.contrib import messages
 from django.http import Http404
 # Create your views here.
 from django.db.models import Sum, F, ExpressionWrapper, fields
-from datetime import date,timedelta
+from datetime import date,timedelta,datetime, timedelta
 from django.db.models.functions import Coalesce
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required, user_passes_test
 
 def is_staff(user):
@@ -21,70 +23,72 @@ def staff_required(view_func):
     decorated_view_func = login_required(user_passes_test(is_staff, login_url='/accounts/login')(view_func))
     return decorated_view_func
 
- 
 @staff_required
 def dashboard(request):
-    # Get today's date
-    today_date = date.today()
-    end_of_day = today_date + timedelta(days=1)
-    
-    total_grand_total_today = Invoice.objects.filter(invoice_date=today_date).aggregate(Sum('grand_total'))['grand_total__sum'] or 0
-    total_gst_amount_today = Invoice.objects.filter(invoice_date=today_date).aggregate(Sum('total_gst_amount'))['total_gst_amount__sum'] or 0
-    total_quantity_today = InvoiceItem.objects.filter(invoice__invoice_date=today_date).aggregate(Sum('quantity'))['quantity__sum'] or 0
-    total_invoices_today = Invoice.objects.filter(invoice_date=today_date).count()
+    try:
+        today_date = date.today()
+        end_of_day = today_date + timedelta(days=1)
 
-    total_credited_amount_today = Account.objects.filter(
-        is_credit=True, 
-        transaction_date__range=(today_date, end_of_day)
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
+        total_grand_total_today = Invoice.objects.filter(invoice_date=today_date).aggregate(Sum('grand_total'))['grand_total__sum'] or 0
+        total_gst_amount_today = Invoice.objects.filter(invoice_date=today_date).aggregate(Sum('total_gst_amount'))['total_gst_amount__sum'] or 0
+        total_quantity_today = InvoiceItem.objects.filter(invoice__invoice_date=today_date).aggregate(Sum('quantity'))['quantity__sum'] or 0
+        total_invoices_today = Invoice.objects.filter(invoice_date=today_date).count()
 
-    total_debited_amount_today = Account.objects.filter(
-        is_credit=False, 
-        transaction_date__range=(today_date, end_of_day)
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
+        total_credited_amount_today = Account.objects.filter(
+            is_credit=True, 
+            transaction_date__range=(today_date, end_of_day)
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
 
-    print(total_credited_amount_today) 
+        total_debited_amount_today = Account.objects.filter(
+            is_credit=False, 
+            transaction_date__range=(today_date, end_of_day)
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
 
-    total_credited_amount = Account.objects.filter(is_credit=True).aggregate(Sum('amount'))['amount__sum'] or 0
-    total_debited_amount = Account.objects.filter(is_credit=False).aggregate(Sum('amount'))['amount__sum'] or 0
-    total_balance = Account.objects.aggregate(
-        total_balance=Sum(ExpressionWrapper(
-            F('amount') * F('is_credit') - F('amount') * ~F('is_credit'),
-            output_field=fields.FloatField()
-        ))
-    )['total_balance'] or 0
+        total_credited_amount = Account.objects.filter(is_credit=True).aggregate(Sum('amount'))['amount__sum'] or 0
+        total_debited_amount = Account.objects.filter(is_credit=False).aggregate(Sum('amount'))['amount__sum'] or 0
+        total_balance = Account.objects.aggregate(
+            total_balance=Sum(ExpressionWrapper(
+                F('amount') * F('is_credit') - F('amount') * ~F('is_credit'),
+                output_field=fields.FloatField()
+            ))
+        )['total_balance'] or 0
+
+        start_date = date.today() - timedelta(days=30)
+        top_five_dealers = Invoice.objects.filter(invoice_date__gte=start_date).values('dealer__business_name').annotate(total_amount=Coalesce(Sum('grand_total'), 0)).order_by('-total_amount')[:5]
+        top_five_dealer_total_amount = [item['total_amount'] for item in top_five_dealers]
+        top_five_dealer_name = [item['dealer__business_name'] for item in top_five_dealers]
+
+        top_five_sale_products = InvoiceItem.objects.filter(invoice__invoice_date__gte=start_date).values('product__product_name').annotate(total_quantity=Coalesce(Sum('quantity'), 0)).order_by('-total_quantity')[:5]
+        top_five_sale_product_quantity = [item['total_quantity'] for item in top_five_sale_products]
+        top_five_sale_product_labels = [item['product__product_name'] for item in top_five_sale_products]
+
+        context = {
+            'total_grand_total_today': total_grand_total_today,
+            'total_gst_amount_today': total_gst_amount_today,
+            'total_quantity_today': total_quantity_today,
+            'total_invoices_today': total_invoices_today,
+            'total_credited_amount_today': total_credited_amount_today,
+            'total_debited_amount_today': total_debited_amount_today,
+            'top_five_dealer_total_amount': top_five_dealer_total_amount,
+            'top_five_dealer_name': top_five_dealer_name,
+            'top_five_sale_product_quantity': top_five_sale_product_quantity,
+            'top_five_sale_product_labels': top_five_sale_product_labels,
+            'total_credited_amount': total_credited_amount,
+            'total_debited_amount': total_debited_amount,
+            'total_balance': total_balance,
+        }
+
+        return render(request, 'staff__dashboard.html', context)
+
+    except ObjectDoesNotExist as e:
+        # Handle the case where an object does not exist
+        return render(request, '404.html', {'error_message': str(e)}, status=404)
+
+    except Exception as e:
+        # Handle other exceptions
+        return render(request, '404.html', {'error_message': str(e)}, status=500)
  
-    start_date = date.today() - timedelta(days=30)
-    top_five_dealers = Invoice.objects.filter(invoice_date__gte=start_date).values('dealer__business_name').annotate(total_amount=Coalesce(Sum('grand_total'), 0)).order_by('-total_amount')[:5]
-    top_five_dealer_total_amount = [item['total_amount'] for item in top_five_dealers]
-    top_five_dealer_name = [item['dealer__business_name'] for item in top_five_dealers]
 
-    # Calculate top five sale products in the last 30 days
-    top_five_sale_products = InvoiceItem.objects.filter(invoice__invoice_date__gte=start_date).values('product__product_name').annotate(total_quantity=Coalesce(Sum('quantity'), 0)).order_by('-total_quantity')[:5]
-    top_five_sale_product_quantity = [item['total_quantity'] for item in top_five_sale_products]
-    top_five_sale_product_labels = [item['product__product_name'] for item in top_five_sale_products]
-    
-    context = {
-        'total_grand_total_today': total_grand_total_today,
-        'total_gst_amount_today': total_gst_amount_today,
-        'total_quantity_today': total_quantity_today,
-        'total_invoices_today': total_invoices_today,
-        'total_credited_amount_today': total_credited_amount_today,
-        'total_debited_amount_today': total_debited_amount_today,
-        # 'total_balance_today': total_balance_today,
-        'top_five_dealer_total_amount': top_five_dealer_total_amount,
-        'top_five_dealer_name': top_five_dealer_name,
-        'top_five_sale_product_quantity': top_five_sale_product_quantity,
-        'top_five_sale_product_labels': top_five_sale_product_labels,
-        'total_credited_amount': total_credited_amount,
-        'total_debited_amount': total_debited_amount,
-        'total_balance': total_balance,
-    }
-
-    return render(request, 'staff__dashboard.html', context)
-
-
- 
 @staff_required
 def dealer_list(request):
     try:
@@ -254,6 +258,7 @@ def create_purchase(request):
             messages.warning(request, error_message)
         return redirect('/staff/product_list/')
     except Exception as e:
+        # Log the exception if needed
         return render(request, '404.html')
 
 # def update_purchase(request): 
@@ -432,36 +437,55 @@ def add_invoice_in_account(request,id):
         
 @staff_required
 def invoice_item_list(request, id):
-    request.session['session_invoice_id']=id
-    records = InvoiceItem.objects.filter(invoice=id)
-    sale_rec = Invoice.objects.get(id=id) 
-    form = InvoiceProductForm()
-    if request.method == 'POST': 
-        form = InvoiceProductForm(request.POST)
-        if form.is_valid():
-            product_id = form.cleaned_data['product'] 
-            product_qty = form.cleaned_data['quantity'] 
-            available_stock=Product.objects.get(id=product_id.id).available_stock
-            if int(available_stock) < int(product_qty):
-                messages.warning(request, f'Only {available_stock} Quantity Available')
-                return redirect(f'/staff/invoice_item_list/{id}')
+    try:
+        request.session['session_invoice_id'] = id
+        records = InvoiceItem.objects.filter(invoice=id)
+        sale_rec = Invoice.objects.get(id=id)
+        form = InvoiceProductForm()
+
+        if request.method == 'POST':
+            form = InvoiceProductForm(request.POST)
+
+            if form.is_valid():
+                product_id = form.cleaned_data['product']
+                product_qty = form.cleaned_data['quantity']
+                available_stock = Product.objects.get(id=product_id.id).available_stock
+
+                if int(available_stock) < int(product_qty):
+                    messages.warning(request, f'Only {available_stock} Quantity Available')
+                    return redirect(f'/staff/invoice_item_list/{id}')
+                else:
+                    fm = form.save(commit=False)
+                    fm.invoice = sale_rec  # Associate the form with the specific invoice
+                    fm.save()
+                    messages.success(request, 'Item Added Successfully')
+                    return redirect(f'/staff/invoice_item_list/{id}')
             else:
-                fm = form.save(commit=False)
-                fm.invoice = sale_rec  # Associate the form with the specific invoice
-                fm.save()
-                messages.success(request, 'Item Added Successfully')
-                return redirect(f'/staff/invoice_item_list/{id}')
-        else:
-            messages.warning(request, 'Item Not Added')
+                # Form is not valid, handle the error
+                messages.warning(request, 'Item Not Added. Please check the form.')
 
-    total_quantity = InvoiceItem.objects.filter(invoice=sale_rec).aggregate(total_quantity=Sum('quantity'))['total_quantity']
-    total_gst_amount = InvoiceItem.objects.filter(invoice=sale_rec).aggregate(total_gst_amount=Sum('gst_amount'))['total_gst_amount']
-    grand_total_amount = InvoiceItem.objects.filter(invoice=sale_rec).aggregate(total_total_amount=Sum('total_amount'))['total_total_amount']
-    total_products = InvoiceItem.objects.filter(invoice=sale_rec).count()
- 
-    context = {'form': form,'id':id, 'invoice_rec': records,'total_quantity':total_quantity,'total_gst_amount':total_gst_amount,'grand_total_amount':grand_total_amount,'total_products':total_products,'invoice_details':sale_rec}
-    return render(request, 'staff__manage_invoice_item.html', context)
+        total_quantity = InvoiceItem.objects.filter(invoice=sale_rec).aggregate(total_quantity=Sum('quantity'))['total_quantity']
+        total_gst_amount = InvoiceItem.objects.filter(invoice=sale_rec).aggregate(total_gst_amount=Sum('gst_amount'))['total_gst_amount']
+        grand_total_amount = InvoiceItem.objects.filter(invoice=sale_rec).aggregate(total_total_amount=Sum('total_amount'))['total_total_amount']
+        total_products = InvoiceItem.objects.filter(invoice=sale_rec).count()
 
+        context = {'form': form, 'id': id, 'invoice_rec': records, 'total_quantity': total_quantity,
+                   'total_gst_amount': total_gst_amount, 'grand_total_amount': grand_total_amount,
+                   'total_products': total_products, 'invoice_details': sale_rec}
+        return render(request, 'staff__manage_invoice_item.html', context)
+
+    except Invoice.DoesNotExist:
+        # Handle the case when the invoice does not exist (404 Not Found)
+        raise Http404("Invoice not found")
+
+    except Product.DoesNotExist:
+        # Handle the case when the product does not exist (404 Not Found)
+        raise Http404("Product not found")
+
+    except Exception as e:
+        # Handle other exceptions
+        messages.error(request, f'An error occurred: {str(e)}')
+        return render(request, '404.html', status=404)
 
 @staff_required
 def delete_invoice_item(request, id):
@@ -504,33 +528,27 @@ import openpyxl
 def dealer_bulk_creation(request):
     if request.method == "POST":
         excel_file = request.FILES.get('excel_file')
+        
         if excel_file:
             try:
                 workbook = openpyxl.load_workbook(excel_file)
-                worksheet = workbook.active 
+                worksheet = workbook.active
                 data_to_insert = []
-                
-                num_records_inserted=0
-                for row in worksheet.iter_rows(min_row=2, values_only=True):
-                    dealer_name = row[0]
-                    business_name = row[1]
-                    mobile_no = row[2]
-                    email_id = row[3]
-                    address = row[4]
-                    state_name = row[5]  # Assuming the state name is provided in the Excel file
-                    pin_code = row[6]
-                    gst_number = row[7]
+                num_records_inserted = 0
 
- 
-                    state_exist=State.objects.filter(state_name=state_name).exists()
+                for row in worksheet.iter_rows(min_row=2, values_only=True):
+                    dealer_name, business_name, mobile_no, email_id, address, state_name, pin_code, gst_number = row
+
+                    # Check if the state exists
+                    state_exist = State.objects.filter(state_name=state_name).exists()
                     if not state_exist:
                         messages.warning(request, f"{state_name} State Not Exist...!")
                         return redirect('/staff/dealer_list/')
-                
-                    num_records_inserted+=1
+
                     # Fetch the existing state or create a new one if it doesn't exist
                     state_obj, created = State.objects.get_or_create(state_name=state_name)
-                    
+
+                    # Create a dealer object
                     dealer_obj = Dealer(
                         dealer_name=dealer_name,
                         business_name=business_name,
@@ -542,18 +560,25 @@ def dealer_bulk_creation(request):
                         gst_number=gst_number
                     )
                     data_to_insert.append(dealer_obj)
-                
+                    num_records_inserted += 1
+
+                # Bulk create dealers
                 Dealer.objects.bulk_create(data_to_insert)
                 messages.success(request, f'{num_records_inserted} records inserted successfully')
+                
+            except openpyxl.utils.exceptions.CellCoordinatesException as e:
+                messages.error(request, f'Error in Excel file format: {str(e)}')
             except Exception as e:
                 messages.error(request, f'Error occurred during import: {str(e)}')
         else:
             messages.error(request, 'No file selected.')
-        return redirect('/staff/dealer_list/')
+
+    return redirect('/staff/dealer_list/')
+
 
 
 @staff_required
-def product_bulk_creation(request):
+def product_bulk_creation(request): 
     if request.method == "POST":
         excel_file = request.FILES.get('excel_file')
         if excel_file:
@@ -561,7 +586,6 @@ def product_bulk_creation(request):
                 workbook = openpyxl.load_workbook(excel_file)
                 worksheet = workbook.active 
                 data_to_insert = []
-                
                 num_records_inserted = 0
                 for row in worksheet.iter_rows(min_row=2, values_only=True):
                     product_code = row[0]
@@ -606,7 +630,6 @@ def print_all_invoice_formate(request, id):
     try:
         invoice_details = Invoice.objects.get(id=id)
         item_rec = InvoiceItem.objects.filter(invoice=id)
-         
         total_quantity = InvoiceItem.objects.filter(invoice=invoice_details).aggregate(total_quantity=Sum('quantity'))['total_quantity']
         total_gst_amount = InvoiceItem.objects.filter(invoice=invoice_details).aggregate(total_gst_amount=Sum('gst_amount'))['total_gst_amount']
         grand_total_amount = InvoiceItem.objects.filter(invoice=invoice_details).aggregate(total_total_amount=Sum('total_amount'))['total_total_amount']
@@ -632,15 +655,12 @@ def print_all_invoice_formate(request, id):
     except Invoice.DoesNotExist:
         return render(request, '404.html')
     
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-
 @staff_required
 def transaction_list(request):
     try: 
         rec = Account.objects.select_related().order_by('-id')
         Filter = Transaction_List_Filter(request.GET, queryset=rec)
         transaction_rec = Filter.qs 
-
         # Add pagination
         page = request.GET.get('page', 1)
         paginator = Paginator(transaction_rec, 25)  # Show 10 transactions per page
@@ -668,7 +688,7 @@ def transaction_list(request):
 
 
 @staff_required
-def create_transaction(request):
+def create_transaction(request): 
     try:
         if request.method == 'POST':
             acc_rec_count = Account.objects.filter(dealer=request.POST.get('dealer')).count()
@@ -743,6 +763,15 @@ def delete_transaction(request, id):
         return redirect('/staff/troubleshoot_transactions_for_balance/')
     except Http404:
         return render(request, '404.html')
+ 
+@staff_required
+def print_transactions_receipt(request,id):
+    try: 
+        data=Account.objects.get(id=id)
+        context={'data':data}
+        return render(request, 'staff__print_payment_received_slip.html', context)
+    except Exception as e:
+        return render(request, '404.html')
 
 
 @staff_required
@@ -773,8 +802,6 @@ def troubleshoot_transactions_for_balance(request):
     except Exception as e:
         return render(request, '404.html')
     
-
-
 
 
 @staff_required
@@ -839,34 +866,47 @@ def delete_performa_invoice(request, id):
     except Http404:
         return render(request, '404.html')
 
-
-
      
 @staff_required
 def performa_invoice_item_list(request, id):
-    request.session['session_invoice_id']=id
-    records = PerformaInvoiceItem.objects.filter(performa_invoice=id)
-    sale_rec = PerformaInvoice.objects.get(id=id) 
-    form = PerformaInvoiceProductForm()
-    if request.method == 'POST': 
-        form = PerformaInvoiceProductForm(request.POST)
-        if form.is_valid(): 
-            fm = form.save(commit=False)
-            fm.performa_invoice = sale_rec  
-            fm.save()
-            messages.success(request, 'Item Added Successfully')
-            return redirect(f'/staff/performa_invoice_item_list/{id}')
-        else:
-            messages.warning(request, 'Item Not Added')
+    try:
+        request.session['session_invoice_id'] = id
+        records = PerformaInvoiceItem.objects.filter(performa_invoice=id)
+        sale_rec = PerformaInvoice.objects.get(id=id)
+        form = PerformaInvoiceProductForm()
 
-    total_quantity = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).aggregate(total_quantity=Sum('quantity'))['total_quantity']
-    total_gst_amount = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).aggregate(total_gst_amount=Sum('gst_amount'))['total_gst_amount']
-    grand_total_amount = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).aggregate(total_total_amount=Sum('total_amount'))['total_total_amount']
-    total_products = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).count()
- 
-    context = {'form': form,'id':id, 'invoice_rec': records,'total_quantity':total_quantity,'total_gst_amount':total_gst_amount,'grand_total_amount':grand_total_amount,'total_products':total_products,'invoice_details':sale_rec}
-    return render(request, 'staff__performa_invoice_item.html', context)
+        if request.method == 'POST':
+            form = PerformaInvoiceProductForm(request.POST)
 
+            if form.is_valid():
+                fm = form.save(commit=False)
+                fm.performa_invoice = sale_rec
+                fm.save()
+                messages.success(request, 'Item Added Successfully')
+                return redirect(f'/staff/performa_invoice_item_list/{id}')
+            else:
+                # Form is not valid, handle the error
+                messages.warning(request, 'Item Not Added. Please check the form.')
+
+        total_quantity = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).aggregate(total_quantity=Sum('quantity'))['total_quantity']
+        total_gst_amount = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).aggregate(total_gst_amount=Sum('gst_amount'))['total_gst_amount']
+        grand_total_amount = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).aggregate(total_total_amount=Sum('total_amount'))['total_total_amount']
+        total_products = PerformaInvoiceItem.objects.filter(performa_invoice=sale_rec).count()
+
+        context = {'form': form, 'id': id, 'invoice_rec': records, 'total_quantity': total_quantity,
+                   'total_gst_amount': total_gst_amount, 'grand_total_amount': grand_total_amount,
+                   'total_products': total_products, 'invoice_details': sale_rec}
+        return render(request, 'staff__performa_invoice_item.html', context)
+
+    except PerformaInvoice.DoesNotExist:
+        # Handle the case when the Performa invoice does not exist (404 Not Found)
+        messages.error(request, 'Performa Invoice not found.')
+        return redirect('/staff/performa_invoice_list/')
+
+    except Exception as e:
+        # Handle other exceptions
+        messages.error(request, f'An error occurred: {str(e)}')
+        return render(request, '404.html', status=404)
 
 @staff_required
 def delete_performa_invoice_item(request, id):
@@ -911,14 +951,3 @@ def print_performa_invoice(request, id):
     except Invoice.DoesNotExist:
         return render(request, '404.html')
     
-
- 
-@staff_required
-def print_transactions_receipt(request,id):
-    try: 
-        data=Account.objects.get(id=id)
-        context={'data':data}
-        return render(request, 'staff__print_payment_received_slip.html', context)
-    except Exception as e:
-        return render(request, '404.html')
-

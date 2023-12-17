@@ -42,6 +42,8 @@
                 <form method="POST" enctype="multipart/form-data" action="">
                     {% csrf_token %}
                     <div class="row">
+                        {% if not is_added_in_account %}
+
                         <div class="col-sm-2">
                             <label for="id_product_code" class="form-label requiredField">
                                 Search Product
@@ -70,7 +72,10 @@
                             {{form.total_amount|as_crispy_field}}
                         </div> 
                     </div> 
-                    <center> <input type="submit" value="Add" class="btn bg-gradient-primary text-light px-5 px-3">
+                    <center> 
+                        
+                        <input type="submit" value="Add" class="btn bg-gradient-primary text-light px-5 px-3">
+                        {% endif %}
                       
                     </center>
                 </form>
@@ -135,7 +140,7 @@
                                 
                             <div class="alert alert-warning alert-dismissible">
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                Printing is limited to a single occurrence. Once a print request is initiated, additional print requests are not permissible. Kindly take note of this limitation
+                                Printing is limited to a single occurrence, and additional print requests are not allowed. Adding or deleting records after generating a bill is also restricted.
                               </div>
                             </div>
                     <center>
@@ -159,7 +164,9 @@
                 <th scope="col" class="text-center text-white" style="">GST %</th> 
                 <th scope="col" class="text-center text-white" style="">GST Amount</th> 
                 <th scope="col" class="text-center text-white" style="">Total Amount</th> 
+                {% if not is_added_in_account %}
                 <th scope="col" class="text-center text-white" style="">Action</th> 
+                {% endif %}
             </tr>
         </thead>
         <tbody id="invoice_table_body">
@@ -175,7 +182,9 @@
                 <td class="text-center">&#8377; {{r.total_amount}}.00</td>
                 <td>
                     <center>
+                        {% if not is_added_in_account %}
                         <a href="{% url "staff_delete_invoice_item" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>
+                        {% endif %}
                     </center>
                 </td>
             </tr>

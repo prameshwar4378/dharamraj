@@ -8,18 +8,20 @@ from .filters import *
 from django.contrib import messages
 import csv
 from django.contrib.staticfiles.storage import staticfiles_storage
+from django.db.models import Min, Max
 
 def export_invoice_list_pdf(request): 
     template = get_template('admin__export_invoice_list.html')  
-
     rec = Invoice.objects.select_related().order_by('id')
     Filter=Invoice_List_Filter(request.GET, queryset=rec)
-    invoice_rec=Filter.qs 
-    count=invoice_rec.count()
-    # start_date = request.GET.get('start_date', None)
-    # end_date = request.GET.get('end_date', None)
+    invoice_rec=Filter.qs  
+    
+    start_date = invoice_rec.aggregate(Min('invoice_date'))['invoice_date__min']
+    end_date = invoice_rec.aggregate(Max('invoice_date'))['invoice_date__max'] 
     context = {
-        "invoice_rec":invoice_rec
+        "invoice_rec":invoice_rec,
+        'start_date':start_date,
+        'end_date':end_date
     }  
     html = template.render(context)
     response = HttpResponse(content_type='application/pdf')
@@ -66,11 +68,16 @@ def export_transaction_list_pdf(request):
     rec = Account.objects.select_related().order_by('id')
     Filter=Transaction_List_Filter(request.GET, queryset=rec)
     transaction_rec=Filter.qs 
+    start_date = transaction_rec.aggregate(Min('transaction_date'))['transaction_date__min']
+    end_date = transaction_rec.aggregate(Max('transaction_date'))['transaction_date__max']
+
     count=transaction_rec.count()
     # start_date = request.GET.get('start_date', None)
     # end_date = request.GET.get('end_date', None)
     context = {
-        "transaction_rec":transaction_rec
+        "transaction_rec":transaction_rec,
+        'start_date':start_date,
+        'end_date':end_date
     }  
     html = template.render(context)
     response = HttpResponse(content_type='application/pdf')

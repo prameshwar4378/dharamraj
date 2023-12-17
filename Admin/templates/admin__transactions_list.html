@@ -265,13 +265,13 @@
                     <center>
 
                         {% if r.is_credit %}
-                        <a href="{% url "admin_print_transactions_receipt" r.id %}" class="btn btn-success px-3 mx-1" style="background:green;"><i
-                                class="mdi mdi-printer"></i>
+                        <a href="{% url "admin_print_transactions_receipt" r.id %}" class="btn btn-success px-3 mx-1"
+                            style="background:green;"><i class="mdi mdi-printer"></i>
                             {% else %}
-                            <a href="{% url "admin_print_transactions_receipt" r.id %}" class="btn btn-success px-3 mx-1"><i
-                                    class="mdi mdi-printer"></i>
-                            </a>
+                            <span class="btn bg-secondary px-3 mx-1">---
+                            </span>
                             {% endif %}
+                            
                             <a href="#" class="btn btn-warning text-secondary px-3" data-toggle="modal"
                                 data-target="#update_transaction"
                                 onclick="update_dealer('{{r.id}}','{{r.dealer.id}}','{{r.payment_mode}}','{{r.is_credit}}','{{r.amount}}','{{r.remark}}')"><i

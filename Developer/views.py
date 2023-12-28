@@ -9,11 +9,24 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 # Create your views here.
+def unauthenticated_user(view_func):
+    def wrapper_func(request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if request.user.is_superuser:
+                return redirect('/developer/dashboard')
+            elif request.user.is_admin:
+                return redirect('/admin/dashboard')
+            elif request.user.is_staff:
+                return redirect('/staff/dashboard')
+        else:
+            return view_func(request, *args, **kwargs)
+    return wrapper_func
+
 
 def index(request):
     return render(request,'index.html')
  
-
+@unauthenticated_user
 def login(request): 
     lg_form=login_form() 
     if request.method=='POST': 

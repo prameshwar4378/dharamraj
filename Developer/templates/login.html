@@ -581,6 +581,7 @@
 
                 <!--<div class="_or">or</div>-->
 
+                {% if not request.user.is_authenticated %}
                 <form action="" method="POST" class="the-form">
                     {% csrf_token %}
 
@@ -591,8 +592,13 @@
                     <input type="password" name="password" id="password" placeholder="Enter your password" required>
 
                     <input type="submit" value="Log In">
-
                 </form>
+            {% else %}
+                <center>
+                    <a href="" style="padding: 10px; background: green; color: white;">Dashboard</a>
+                </center>
+            {% endif %}
+
 
             </div><!-- FORM BODY-->
 

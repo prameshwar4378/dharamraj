@@ -18,9 +18,12 @@
     <nav aria-label="breadcrumb">
         <ul class="breadcrumb">
             <li class=" ">
+                {% if grand_total_amount %}
                 <span class=" bg-gradient-primary buttton " data-toggle="modal"
                 data-target="#model_generate_bill" style="padding:10px; border-radius:6px;cursor: pointer;color:white;">Export / Print</span>
-
+                {% else %}
+                <span class=" bg-secondary buttton "   style="padding:10px; border-radius:6px;cursor: pointer;color:white;">Export / Print</span>
+                {% endif %}
             </li>
         </ul>
     </nav>
@@ -139,7 +142,7 @@
                               </div>
                             </div>
                         <center>
-                        <a href="{% url "admin_print_all_invoice_formate" id %}" class="btn bg-gradient-primary text-light px-5 px-3" style="width:300px">Generate and Print Bills</a>
+                            <a href="{% url "admin_print_all_invoice_formate" id %}" class="btn bg-gradient-primary text-light px-5 px-3" style="width:300px">Generate and Print Bills</a>
                     </center>                     
                 </div>
                 

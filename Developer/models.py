@@ -153,7 +153,7 @@ PAYMENT_MODE = (
     ('Credit Card', 'Credit Card'),
     ('Bank Transfer', 'Bank Transfer'),
     ('Cash', 'Cash'),
-    ('Check', 'Check'),  # Added 'Check' as a new choice
+    ('Cheque', 'Cheque'),  
 )
 
 class Account(models.Model):

@@ -14,7 +14,11 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required, user_passes_test 
+
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.core.cache import cache
 
 def is_admin(user):
     return user.is_authenticated and hasattr(user, 'is_admin') and user.is_admin
@@ -22,6 +26,7 @@ def is_admin(user):
 def admin_required(view_func):
     decorated_view_func = login_required(user_passes_test(is_admin, login_url='/accounts/login')(view_func))
     return decorated_view_func
+
 
 @admin_required
 def dashboard(request):
@@ -77,7 +82,6 @@ def dashboard(request):
             'total_debited_amount': total_debited_amount,
             'total_balance': total_balance,
         }
-
         return render(request, 'admin__dashboard.html', context)
 
     except ObjectDoesNotExist as e:
@@ -556,8 +560,7 @@ def delete_invoice_item(request, id):
         return redirect(f'/admin/invoice_item_list/{id}')
     except Http404:
         return render(request, '404.html')
-
-
+ 
 @admin_required
 def get_product_details(request):
     product_code = request.GET.get('product_code', '')
@@ -688,32 +691,57 @@ def product_bulk_creation(request):
 def print_all_invoice_formate(request, id):
     try:
         invoice_details = Invoice.objects.get(id=id)
-        item_rec = InvoiceItem.objects.filter(invoice=id)
-        total_quantity = InvoiceItem.objects.filter(invoice=invoice_details).aggregate(total_quantity=Sum('quantity'))['total_quantity']
-        total_gst_amount = InvoiceItem.objects.filter(invoice=invoice_details).aggregate(total_gst_amount=Sum('gst_amount'))['total_gst_amount']
-        grand_total_amount = InvoiceItem.objects.filter(invoice=invoice_details).aggregate(total_total_amount=Sum('total_amount'))['total_total_amount']
-        total_rate = item_rec.aggregate(total_rate=Sum('rate'))['total_rate']
-        total_taxable_amount = item_rec.aggregate(total_taxable_amount=Sum('taxable_amount'))['total_taxable_amount']
+        item_rec = InvoiceItem.objects.filter(invoice=invoice_details)
 
-        if not str(invoice_details.dealer.state) == "Gujarat":
-            gst_type="IGST"
-        else: 
-            gst_type="CGST / SGST"
- 
+        # Aggregate all values in a single query
+        aggregates = item_rec.aggregate(
+            total_quantity=Sum('quantity'),
+            total_gst_amount=Sum('gst_amount'),
+            grand_total_amount=Sum('total_amount'),
+            total_rate=Sum('rate'),
+            total_taxable_amount=Sum('taxable_amount'),
+        )
 
-        context = {'invoice_details': invoice_details, 
-                   'item_rec': item_rec,
-                   'total_quantity':total_quantity,
-                   'total_gst_amount':total_gst_amount,
-                   'grand_total_amount':grand_total_amount,
-                   'total_rate':total_rate,
-                   'total_taxable_amount':total_taxable_amount,
-                   'gst_type':gst_type,
-                   }
+        dealer_id = invoice_details.dealer.id 
+
+        # Use the aggregates directly instead of querying the database again
+        total_quantity = aggregates['total_quantity']
+        total_gst_amount = aggregates['total_gst_amount']
+        grand_total_amount = aggregates['grand_total_amount']
+        total_rate = aggregates['total_rate']
+        total_taxable_amount = aggregates['total_taxable_amount']
+
+        if Invoice.objects.filter(id__lt=id, dealer=dealer_id).exists():
+            # Records exist with the given conditions
+            before_outstanding = Invoice.objects.filter(dealer=dealer_id, id__lt=invoice_details.id).aggregate(total_grand_total=Sum('grand_total'))['total_grand_total']
+            total_outstanding = int(before_outstanding) + int(grand_total_amount)
+            print(True)
+        else:
+            # No records exist with the given conditions
+            before_outstanding = 0
+            total_outstanding = int(grand_total_amount)
+            print(False)
+
+        gst_type = "IGST" if invoice_details.dealer.state != "Gujarat" else "CGST / SGST"
+
+        context = {
+            'invoice_details': invoice_details, 
+            'item_rec': item_rec,
+            'total_quantity': total_quantity,
+            'total_gst_amount': total_gst_amount,
+            'grand_total_amount': grand_total_amount,
+            'total_rate': total_rate,
+            'total_taxable_amount': total_taxable_amount,
+            'gst_type': gst_type,
+            'before_outstanding': before_outstanding,
+            'total_outstanding': total_outstanding,
+        }
+
         return render(request, 'admin__print_all_invoice_formate.html', context)
     except Invoice.DoesNotExist:
         return render(request, '404.html')
     
+
 @admin_required
 def transaction_list(request):
     try: 
@@ -746,7 +774,6 @@ def transaction_list(request):
     except Exception as e:
         return render(request, '404.html')
 
-
 @admin_required
 def create_transaction(request):
     try:
@@ -755,18 +782,20 @@ def create_transaction(request):
             if acc_rec_count:
                 balance_rec = Account.objects.filter(dealer=request.POST.get('dealer')).latest('id')
             payment_status = request.POST.get('transaction-type-create')
-   
+            dealer_profile=Dealer.objects.get(id=int(request.POST.get('dealer')))
             form = CreateTransactionForm(request.POST)
             if form.is_valid():
                 fm = form.save(commit=False)
+                amount=int(request.POST.get('amount'))
                 if payment_status == 'credit':
                     fm.is_credit=True
-                    fm.balance = balance_rec.balance +  int(request.POST.get('amount')) if acc_rec_count > 0 else int(request.POST.get('amount'))
+                    fm.balance = balance_rec.balance +  amount if acc_rec_count > 0 else amount
                 else:
                     fm.is_credit=False
-                    fm.balance = balance_rec.balance -  int(request.POST.get('amount')) if acc_rec_count > 0 else int(request.POST.get('amount'))
+                    fm.balance = balance_rec.balance -  amount if acc_rec_count > 0 else amount
                 fm.created_by=request.user
                 fm.save()
+ 
                 messages.success(request, 'Transaction Created Successfully.....')
             else:
                 error_message = ', '.join([f"{field}: {error[0]}" for field, error in form.errors.items()])

@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-wyh-^)5dbm5)wfp&lt&-^=kxpd35i&*+8colrq(s$to4^+a0r#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.43.25','localhost','127.0.0.1']
 
 
 # Application definition
@@ -149,8 +149,6 @@ MEDIA_URL = '/media/'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-AUTH_USER_MODEL = 'Developer.CustomUser'
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+AUTH_USER_MODEL = 'Developer.CustomUser' 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

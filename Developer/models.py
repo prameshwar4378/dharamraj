@@ -116,6 +116,7 @@ class InvoiceItem(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.product.available_stock -= self.quantity
+        self.invoice.is_added_in_account=False
         self.product.save() 
 
         # Update GST amount in associated Invoice
@@ -126,7 +127,7 @@ class InvoiceItem(models.Model):
         
         # Update grand total in associated Invoice
         grand_total = invoice_items.aggregate(total_total_amount=Sum('total_amount'))['total_total_amount']
-        self.invoice.grand_total = grand_total
+        self.invoice.grand_total = grand_total 
         self.invoice.save()
     
     def __str__(self):
@@ -146,6 +147,7 @@ class InvoiceItem(models.Model):
             invoice_items = InvoiceItem.objects.filter(invoice=self.invoice)
             grand_total = invoice_items.aggregate(total_total_amount=models.Sum('total_amount'))['total_total_amount']
             self.invoice.grand_total = grand_total
+            self.invoice.is_added_in_account=False
             self.invoice.save()
 
 PAYMENT_MODE = (
@@ -159,7 +161,7 @@ PAYMENT_MODE = (
 class Account(models.Model):
     transaction_id=models.CharField(unique=True,null=True, max_length=50)
     dealer = models.ForeignKey(Dealer, on_delete=models.CASCADE, db_index=True)
-    amount = models.PositiveIntegerField()
+    amount = models.IntegerField()
     payment_mode = models.CharField(max_length=50, choices=PAYMENT_MODE)
     transaction_date = models.DateTimeField(auto_now_add=True, db_index=True)
     is_credit=models.BooleanField(default=True)

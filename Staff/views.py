@@ -403,16 +403,17 @@ def delete_invoice(request, id):
 def add_invoice_in_account(request,id):
     try:
         invoice=get_object_or_404(Invoice, id=id)
-        check_invoice_exist=Account.objects.filter(invoice_number=invoice.invoice_number).exists()
+        check_invoice_exist=Account.objects.filter(invoice_number=invoice.invoice_number)
         
         if not invoice.grand_total:
-            messages.warning(request, 'Amount not available.....') 
+            messages.warning(request, 'Product not available.....') 
             return redirect('/staff/invoice_list/') 
         
-        if check_invoice_exist:
-            messages.warning(request, 'Invoice Exist.....') 
-            return redirect('/staff/invoice_list')
-        else: 
+        if check_invoice_exist.exists():
+            check_invoice_exist.update(amount=invoice.grand_total)
+            Invoice.objects.filter(id=id).update(is_added_in_account=True)
+            return redirect('/staff/invoice_list/')
+        else:
             acc_rec_count = Account.objects.filter(dealer=invoice.dealer).count()
             if acc_rec_count:
                 balance_rec = Account.objects.filter(dealer=invoice.dealer).latest('id')
@@ -430,11 +431,10 @@ def add_invoice_in_account(request,id):
                 created_by=request.user,  # Assuming you have a user associated with the request
             )
             Invoice.objects.filter(id=id).update(is_added_in_account=True)
-            messages.success(request, 'Invoice Added in Account.....') 
             return redirect('/staff/invoice_list/') 
     except Exception as e:
             return render(request, '404.html')
-        
+   
 @staff_required
 def invoice_item_list(request, id):
     try:
@@ -628,9 +628,39 @@ def product_bulk_creation(request):
 @staff_required
 def print_all_invoice_formate(request, id):
     try:
+        #This code for add add invoice amount in accont model
+        invoice=get_object_or_404(Invoice, id=id)
+        check_invoice_exist=Account.objects.filter(invoice_number=invoice.invoice_number)
+        
+        if not invoice.grand_total:
+            messages.warning(request, 'Product not available.....') 
+            return redirect('/staff/invoice_list/') 
+        
+        if check_invoice_exist.exists():
+            check_invoice_exist.update(amount=invoice.grand_total)
+            Invoice.objects.filter(id=id).update(is_added_in_account=True)
+        else:
+            acc_rec_count = Account.objects.filter(dealer=invoice.dealer).count()
+            if acc_rec_count:
+                balance_rec = Account.objects.filter(dealer=invoice.dealer).latest('id')
+                running_balance = balance_rec.balance - int(invoice.grand_total) if acc_rec_count > 0 else int(invoice.grand_total)
+            else:
+                running_balance = int(invoice.grand_total)
+            
+            Account.objects.create(
+                dealer=invoice.dealer,
+                amount=int(invoice.grand_total),
+                payment_mode='other',  # Add the appropriate payment mode
+                is_credit=False,  # Adjust based on your logic
+                balance=running_balance,
+                invoice_number=invoice.invoice_number,
+                created_by=request.user,  # Assuming you have a user associated with the request
+            )
+            Invoice.objects.filter(id=id).update(is_added_in_account=True)
+
+        # Here code start for printing invoice
         invoice_details = Invoice.objects.get(id=id)
         item_rec = InvoiceItem.objects.filter(invoice=invoice_details)
-
         # Aggregate all values in a single query
         aggregates = item_rec.aggregate(
             total_quantity=Sum('quantity'),
@@ -652,16 +682,16 @@ def print_all_invoice_formate(request, id):
         if Invoice.objects.filter(id__lt=id, dealer=dealer_id).exists():
             # Records exist with the given conditions
             before_outstanding = Invoice.objects.filter(dealer=dealer_id, id__lt=invoice_details.id).aggregate(total_grand_total=Sum('grand_total'))['total_grand_total']
-            total_outstanding = int(before_outstanding) + int(grand_total_amount)
-            print(True)
+            if before_outstanding:
+                total_outstanding = int(before_outstanding) + int(grand_total_amount)
+            else:
+                total_outstanding=grand_total_amount
+                before_outstanding=0
         else:
-            # No records exist with the given conditions
-            before_outstanding = 0
-            total_outstanding = int(grand_total_amount)
-            print(False)
-
+            total_outstanding=grand_total_amount
+            before_outstanding=0
+            
         gst_type = "IGST" if invoice_details.dealer.state != "Gujarat" else "CGST / SGST"
-
         context = {
             'invoice_details': invoice_details, 
             'item_rec': item_rec,
@@ -674,7 +704,6 @@ def print_all_invoice_formate(request, id):
             'before_outstanding': before_outstanding,
             'total_outstanding': total_outstanding,
         }
-
         return render(request, 'staff__print_all_invoice_formate.html', context)
     except Invoice.DoesNotExist:
         return render(request, '404.html')

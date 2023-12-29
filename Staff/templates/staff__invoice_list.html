@@ -196,8 +196,9 @@
                 <td>
                     <center>
                         {% if r.is_added_in_account %}
+                        <span href="" class="fs-4 px-3" ><i class="text-success mdi mdi-checkbox-marked-circle"></i></span>
                         {% else %}
-                        <a href="{% url "staff_add_invoice_in_account" r.id %}" class="btn btn-danger text-secondary px-3">Add to Account</a>
+                        <a href="{% url "admin_add_invoice_in_account" r.id %}"  class="fs-4 text-warning px-3 text-sm"  data-bs-toggle="tooltip" data-bs-placement="top" title="Update or Add invoice in Account"><i class="mdi  mdi-alert-circle"></i></a>
                         {% endif %}
 
                         {% if r.is_added_in_account %}
@@ -295,5 +296,12 @@
  
 </script>
 
-  
+<script>
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+</script>
+
 {% endblock containt %}

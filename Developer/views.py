@@ -8,6 +8,16 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import pandas as pd
+from django.contrib.auth.decorators import login_required, user_passes_test 
+
+
+
+def is_superuser(user):
+    return user.is_authenticated and hasattr(user, 'is_superuser') and user.is_superuser
+
+def superuser_required(view_func):
+    decorated_view_func = login_required(user_passes_test(is_superuser, login_url='/accounts/login')(view_func))
+    return decorated_view_func
 
 # Create your views here.
 def unauthenticated_user(view_func):
@@ -149,7 +159,7 @@ def upload_backup_file(request):
     return JsonResponse(response_data)
 
 
-
+@superuser_required
 def user_list(request):
     user_rec=CustomUser.objects.select_related()
     if request.method == 'POST':
@@ -164,6 +174,7 @@ def user_list(request):
     return render(request, 'developer__user_list.html', {'form': form,'user_rec':user_rec})
  
   
+@superuser_required
 def update_user(request,id):
     if request.method=="POST":
         pi=CustomUser.objects.get(pk=id)
@@ -178,9 +189,11 @@ def update_user(request,id):
     return render(request,'developer__update_user.html',{'form':fm})   
 
 
+@superuser_required
 def dashboard(request):
     return render(request,'developer__dashboard.html')
 
+@superuser_required
 def state_list(request):
     state_rec=State.objects.all()
     if request.method=="POST":
@@ -190,6 +203,7 @@ def state_list(request):
     return render(request,'developer__state_list.html',{'state_rec':state_rec})
 
 
+@superuser_required
 def delete_state(request, id):
     state = get_object_or_404(State, id=id)
     state.delete()
@@ -199,6 +213,7 @@ def delete_state(request, id):
 
 import openpyxl 
     
+@superuser_required
 def state_bulk_creation(request):
     if request.method == "POST":
         excel_file = request.FILES.get('excel_file')
@@ -221,11 +236,11 @@ def state_bulk_creation(request):
         else:
             messages.error(request, 'No file selected.')
         return redirect('/developer/state_list/')
-    
-    
+   
 from django.apps import apps
 from django.utils import timezone
 
+@superuser_required
 def convert_to_unaware_datetime(value):
     if value:
         # Convert datetime to the local timezone
@@ -234,6 +249,7 @@ def convert_to_unaware_datetime(value):
         return local_datetime.replace(tzinfo=None)
     return None
 
+@superuser_required
 def generate_csv_backup(request):
     # Get the app configuration for the 'Developer' app
     app_config = apps.get_app_config('Developer')

@@ -7,7 +7,7 @@ from .filters import *
 from django.contrib import messages
 from django.http import Http404
 # Create your views here.
-from django.db.models import Sum, F, ExpressionWrapper, fields
+from django.db.models import Sum, F, ExpressionWrapper, fields, Q
 from datetime import date,timedelta,datetime, timedelta
 from django.db.models.functions import Coalesce
 from django.contrib.auth.decorators import login_required
@@ -31,9 +31,9 @@ def admin_required(view_func):
 @admin_required
 def dashboard(request):
     try:
+
         today_date = date.today()
         end_of_day = today_date + timedelta(days=1)
-
         total_grand_total_today = Invoice.objects.filter(invoice_date=today_date).aggregate(Sum('grand_total'))['grand_total__sum'] or 0
         total_gst_amount_today = Invoice.objects.filter(invoice_date=today_date).aggregate(Sum('total_gst_amount'))['total_gst_amount__sum'] or 0
         total_quantity_today = InvoiceItem.objects.filter(invoice__invoice_date=today_date).aggregate(Sum('quantity'))['quantity__sum'] or 0
@@ -58,6 +58,11 @@ def dashboard(request):
             ))
         )['total_balance'] or 0
 
+        count_product_out_of_stock = Product.objects.filter(available_stock=0).count()
+        total_available_stock = Product.objects.aggregate(total_available_stock=Sum('available_stock'))['total_available_stock'] or 0
+        count_min_stock = Product.objects.filter(~Q(available_stock=0),available_stock__lt=F('minimum_stock')).count()
+        count_available_stock = Product.objects.filter(available_stock__gte=F('minimum_stock')).count()
+         
         start_date = date.today() - timedelta(days=30)
         top_five_dealers = Invoice.objects.filter(invoice_date__gte=start_date).values('dealer__business_name').annotate(total_amount=Coalesce(Sum('grand_total'), 0)).order_by('-total_amount')[:5]
         top_five_dealer_total_amount = [item['total_amount'] for item in top_five_dealers]
@@ -68,6 +73,10 @@ def dashboard(request):
         top_five_sale_product_labels = [item['product__product_name'] for item in top_five_sale_products]
 
         context = {
+            'count_product_out_of_stock':count_product_out_of_stock,
+            'count_min_stock':count_min_stock,
+            'count_available_stock':count_available_stock, 
+            'total_available_stock':total_available_stock,
             'total_grand_total_today': total_grand_total_today,
             'total_gst_amount_today': total_gst_amount_today,
             'total_quantity_today': total_quantity_today,
@@ -91,6 +100,7 @@ def dashboard(request):
     except Exception as e:
         # Handle other exceptions
         return render(request, '404.html', {'error_message': str(e)}, status=500)
+
 
 @admin_required
 def user_list(request):
@@ -657,6 +667,7 @@ def product_bulk_creation(request):
                     hsn_sac = row[4]
                     gst = row[5]
                     available_stock = row[6]
+                    minimum_stock = row[7]
 
                     # Check if product with the same code already exists
                     product_exist = Product.objects.filter(product_code=product_code).exists()
@@ -673,7 +684,8 @@ def product_bulk_creation(request):
                         sale_amount=sale_amount,
                         hsn_sac=hsn_sac,
                         gst=gst,
-                        available_stock=available_stock
+                        available_stock=available_stock,
+                        minimum_stock=minimum_stock
                     )
                     data_to_insert.append(product_obj)
                 
@@ -684,8 +696,6 @@ def product_bulk_creation(request):
         else:
             messages.error(request, 'No file selected.')
         return redirect('/admin/product_list/')
-
-
 
 @admin_required
 def print_all_invoice_formate(request, id):
@@ -780,7 +790,7 @@ def transaction_list(request):
 
         # Add pagination
         page = request.GET.get('page', 1)
-        paginator = Paginator(transaction_rec, 25)  # Show 10 transactions per page
+        paginator = Paginator(transaction_rec, 4)  # Show 10 transactions per page
         try:
             transaction_rec = paginator.page(page)
         except PageNotAnInteger:
@@ -894,7 +904,7 @@ def print_transactions_receipt(request,id):
 def troubleshoot_transactions_for_balance(request):
     try:
 
-        dealers = Dealer.objects.all()
+        dealers = Dealer.objects.select_related()
 
         for dealer in dealers:
             # Filter previous entries for the same dealer
@@ -910,9 +920,10 @@ def troubleshoot_transactions_for_balance(request):
                     transaction_date__lte=account.transaction_date, is_credit=False
                 ).aggregate(Sum('amount'))['amount__sum'] or 0
 
-                # Update the balance field
+                # Update the balance field 
                 account.balance = previous_credited_amount - previous_debited_amount
-                account.save()
+                account.save() 
+                    
 
         return redirect('/admin/transaction_list/')
     except Exception as e:
@@ -1062,7 +1073,7 @@ def print_performa_invoice(request, id):
                    'total_rate':total_rate,
                    'total_taxable_amount':total_taxable_amount,
                    'gst_type':gst_type,
-                   }
+        }
         return render(request, 'admin__print_performa_invoice.html', context)
     except Invoice.DoesNotExist:
         return render(request, '404.html')

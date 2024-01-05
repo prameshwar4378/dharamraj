@@ -118,3 +118,23 @@ def export_transaction_list_csv(request):
         csv_writer.writerow(data_row)
 
     return response
+
+
+
+
+def export_stock_details_csv(request):
+    rec = Product.objects.select_related()  
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="Stock Details.csv"'
+    csv_writer = csv.writer(response)
+    header_row = ['Product Code', 'Product Name', 'Minimum Stock Range', 'Available Stock']
+    csv_writer.writerow(header_row)
+    for product in rec:
+        data_row = [
+            product.product_code,  
+            product.product_name,  
+            product.minimum_stock,  
+            product.available_stock,   
+        ]
+        csv_writer.writerow(data_row)
+    return response

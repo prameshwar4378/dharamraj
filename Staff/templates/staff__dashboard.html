@@ -197,6 +197,88 @@
     </div>
 </div>
 
+
+<div class="row mt-3">
+    <div class="col-lg-12 ">
+        <div class="row mx-1 py-2 header-today-section">
+            <h4>Stock Details |  <a href="{% url "staff_export_stock_details_csv" %}" style="font-size:12px; color:white;text-decoration:none; cursor: pointer; position: relative; top:-2px; background:purple; border-radius:5px;" class="px-2 py-1">Export</a></h4>
+            <hr>
+            <div class="container" style="">
+                <div class="">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4">
+                        <div class="col">
+                            <div class="card radius-10 border-start bg-danger border-0 border-5  border-warning">
+                                <div class="card-body ">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-light">Out-of-Stock Products</p>
+                                            <h3 class="my-1 text-light">{{count_product_out_of_stock}}</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1  class=" text-light">₹</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class="card radius-10 border-start bg-warning border-0 border-5 border-danger">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-light">Low Stock Products</p>
+                                            <h3 class="my-1 text-light">{{count_min_stock}}</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1  class=" text-light">₹</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card radius-10 border-start border-0 bg-success border-5 border-info">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-light">Available Stock Product</p>
+                                            <h3 class="my-1 text-light">{{count_available_stock}}</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1  class=" text-light">₹</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card radius-10 border-start border-0 bg-info border-5 border-success">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div>
+                                            <p class="mb-0 text-light">Total Available Stock</p>
+                                            <h3 class="my-1 text-light">{{total_available_stock}}</h3>
+                                        </div>
+                                        <div
+                                            class="widgets-icons-2 rounded-circle bg-gradient-scooter text-white ms-auto">
+                                            <h1  class=" text-light">₹</h1>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <div class="row mt-3">
     <div class="col-sm-6">
         <div class="card recent-sales overflow-auto">

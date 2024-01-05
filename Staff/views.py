@@ -7,7 +7,7 @@ from .filters import *
 from django.contrib import messages
 from django.http import Http404
 # Create your views here.
-from django.db.models import Sum, F, ExpressionWrapper, fields
+from django.db.models import Sum, F, ExpressionWrapper, fields,Q
 from datetime import date,timedelta,datetime, timedelta
 from django.db.models.functions import Coalesce
 from django.contrib.auth.decorators import login_required
@@ -53,6 +53,13 @@ def dashboard(request):
             ))
         )['total_balance'] or 0
 
+
+        count_product_out_of_stock = Product.objects.filter(available_stock=0).count()
+        total_available_stock = Product.objects.aggregate(total_available_stock=Sum('available_stock'))['total_available_stock'] or 0
+        count_min_stock = Product.objects.filter(~Q(available_stock=0),available_stock__lt=F('minimum_stock')).count()
+        count_available_stock = Product.objects.filter(available_stock__gte=F('minimum_stock')).count()
+         
+
         start_date = date.today() - timedelta(days=30)
         top_five_dealers = Invoice.objects.filter(invoice_date__gte=start_date).values('dealer__business_name').annotate(total_amount=Coalesce(Sum('grand_total'), 0)).order_by('-total_amount')[:5]
         top_five_dealer_total_amount = [item['total_amount'] for item in top_five_dealers]
@@ -63,6 +70,11 @@ def dashboard(request):
         top_five_sale_product_labels = [item['product__product_name'] for item in top_five_sale_products]
 
         context = {
+            
+            'count_product_out_of_stock':count_product_out_of_stock,
+            'count_min_stock':count_min_stock,
+            'count_available_stock':count_available_stock, 
+            'total_available_stock':total_available_stock,
             'total_grand_total_today': total_grand_total_today,
             'total_gst_amount_today': total_gst_amount_today,
             'total_quantity_today': total_quantity_today,
@@ -690,7 +702,7 @@ def print_all_invoice_formate(request, id):
         else:
             total_outstanding=grand_total_amount
             before_outstanding=0
-            
+        
         gst_type = "IGST" if invoice_details.dealer.state != "Gujarat" else "CGST / SGST"
         context = {
             'invoice_details': invoice_details, 

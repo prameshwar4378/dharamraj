@@ -342,10 +342,10 @@
     <ul class="pagination">
         {% if transaction_rec.has_previous %}
         <li class="page-item">
-            <a class="page-link" href="?page=1">&laquo;&laquo; first</a>
+            <a class="page-link" href="?page=1{% if request.GET.q %}&{{ request.GET.urlencode }}{% endif %}">&laquo;&laquo; first</a>
         </li>
         <li class="page-item">
-            <a class="page-link" href="?page={{ transaction_rec.previous_page_number }}">previous</a>
+            <a class="page-link" href="?page={{ transaction_rec.previous_page_number }}{% if request.GET.q %}&{{ request.GET.urlencode }}{% endif %}">previous</a>
         </li>
         {% endif %}
 
@@ -356,10 +356,10 @@
 
         {% if transaction_rec.has_next %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ transaction_rec.next_page_number }}">next</a>
+            <a class="page-link" href="?page={{ transaction_rec.next_page_number }}{% if request.GET.q %}&{{ request.GET.urlencode }}{% endif %}">next</a>
         </li>
         <li class="page-item">
-            <a class="page-link" href="?page={{ transaction_rec.paginator.num_pages }}">last &raquo;&raquo;</a>
+            <a class="page-link" href="?page={{ transaction_rec.paginator.num_pages }}{% if request.GET.q %}&{{ request.GET.urlencode }}{% endif %}">last &raquo;&raquo;</a>
         </li>
         {% endif %}
     </ul>

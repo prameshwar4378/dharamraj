@@ -7,6 +7,7 @@ from django.core.serializers import serialize
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+import pandas as pd
 
 # Create your views here.
 def unauthenticated_user(view_func):
@@ -220,5 +221,38 @@ def state_bulk_creation(request):
         else:
             messages.error(request, 'No file selected.')
         return redirect('/developer/state_list/')
+    
+    
+from django.apps import apps
+from django.utils import timezone
 
+def convert_to_unaware_datetime(value):
+    if value:
+        # Convert datetime to the local timezone
+        local_datetime = value.astimezone(timezone.get_current_timezone())
+        # Make the datetime timezone-unaware
+        return local_datetime.replace(tzinfo=None)
+    return None
 
+def generate_csv_backup(request):
+    # Get the app configuration for the 'Developer' app
+    app_config = apps.get_app_config('Developer')
+
+    # Get all models in the 'Developer' app
+    app_models = app_config.get_models()
+
+    # Create a Pandas Excel writer using the xlsxwriter engine
+    with pd.ExcelWriter('backup_file.xlsx', engine='xlsxwriter') as writer:
+        for model in app_models:
+            # Convert model data to a DataFrame
+            model_data = pd.DataFrame(list(model.objects.all().values()))
+
+            # Convert datetime fields to timezone-unaware
+            for column in model_data.select_dtypes(include=['datetime64[ns]']).columns:
+                model_data[column] = model_data[column].apply(convert_to_unaware_datetime)
+
+            # Write the DataFrame to a sheet in the Excel file
+            model_data.to_excel(writer, sheet_name=model.__name__, index=False)
+
+if __name__ == "__main__":
+    generate_csv_backup()

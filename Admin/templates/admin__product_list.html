@@ -75,14 +75,17 @@
                             <div class="col-sm-6">
                                  {{create_product_fm.product_name|as_crispy_field}}
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-3">
                                  {{create_product_fm.hsn_sac|as_crispy_field}}
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-3">
                                  {{create_product_fm.sale_amount|as_crispy_field}}
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-3">
                                  {{create_product_fm.gst|as_crispy_field}}
+                            </div> 
+                            <div class="col-sm-3">
+                                 {{create_product_fm.minimum_stock|as_crispy_field}}
                             </div> 
                             <div class="col-sm-12">
                                  {{create_product_fm.description|as_crispy_field}}
@@ -185,12 +188,11 @@
                 <td>{{forloop.counter}}</td>
                 <td>{{r.product_code}}</td>
                 <td>{{r.product_name}}</td>
-                <td>{{r.sale_amount}}</td> 
-                <td>{{r.available_stock}}</td> 
+                <td class="text-center">{{r.sale_amount}}</td> 
+                <td class="text-center">{{r.available_stock}}</td> 
                 <td>
                     <center>
-                        <a href="#" class="btn btn-success px-3" data-toggle="modal" data-target="#update_product" onclick="update_dealer('{{r.id}}','{{r.product_code}}','{{r.product_name}}','{{r.description}}','{{r.sale_amount}}','{{r.gst}}','{{r.hsn_sac}}')"><i class="mdi mdi-pencil"></i></a>
-
+                        <a href="#" class="btn btn-success px-3" data-toggle="modal" data-target="#update_product" onclick="update_dealer('{{r.id}}','{{r.product_code}}','{{r.product_name}}','{{r.description}}','{{r.sale_amount}}','{{r.gst}}','{{r.hsn_sac}}','{{r.minimum_stock}}')"><i class="mdi mdi-pencil"></i></a>
                       <!--  <a href="{% url "admin_delete_product" r.id %}" class="btn btn-danger px-3"><i class="mdi mdi-delete"></i></a>-->
                     </center>
                 </td>
@@ -225,14 +227,17 @@
                             <div class="col-sm-6">
                                  {{create_product_fm.product_name|as_crispy_field}}
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-3">
                                  {{create_product_fm.hsn_sac|as_crispy_field}}
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-3">
                                  {{create_product_fm.sale_amount|as_crispy_field}}
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-3">
                                  {{create_product_fm.gst|as_crispy_field}}
+                            </div> 
+                            <div class="col-sm-3">
+                                 {{create_product_fm.minimum_stock|as_crispy_field}}
                             </div> 
                             <div class="col-sm-12">
                                  {{create_product_fm.description|as_crispy_field}}
@@ -250,7 +255,7 @@
 </div>
 
 <script>
-    function update_dealer(id, product_code, product_name, description, sale_amount, gst, hsn_sac) {
+    function update_dealer(id, product_code, product_name, description, sale_amount, gst, hsn_sac,minimum_stock) {
         // Assuming your form has an id attribute set to "product_update_form"
         var form = document.getElementById("product_update_form");
         // Update form elements with the provided values
@@ -277,6 +282,9 @@
         
         var hsn_sac_val = form.elements["id_hsn_sac"];
         hsn_sac_val.value = hsn_sac ;
+        
+        var minimum_stock_val = form.elements["id_minimum_stock"];
+        minimum_stock_val.value = minimum_stock;
     }
 </script>
  

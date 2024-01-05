@@ -198,7 +198,7 @@
                         {% if r.is_added_in_account %}
                         <span href="" class="fs-4 px-3" ><i class="text-success mdi mdi-checkbox-marked-circle"></i></span>
                         {% else %}
-                        <a href="{% url "admin_add_invoice_in_account" r.id %}"  class="fs-4 text-warning px-3 text-sm"  data-bs-toggle="tooltip" data-bs-placement="top" title="Update or Add invoice in Account"><i class="mdi  mdi-alert-circle"></i></a>
+                        <a href="{% url "staff_add_invoice_in_account" r.id %}"  class="fs-4 text-warning px-3 text-sm"  data-bs-toggle="tooltip" data-bs-placement="top" title="Update or Add invoice in Account"><i class="mdi  mdi-alert-circle"></i></a>
                         {% endif %}
 
                         {% if r.is_added_in_account %}

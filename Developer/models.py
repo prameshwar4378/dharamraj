@@ -43,6 +43,7 @@ class Product(models.Model):
     description = models.TextField(null=True, blank=True)
     sale_amount=models.IntegerField(null=True)
     hsn_sac=models.IntegerField(null=True)
+    minimum_stock=models.IntegerField(default=0)
     gst=models.CharField(max_length=50,choices=GST_FOR_PRODUCT,null=True)
     available_stock = models.PositiveIntegerField(default=0, db_index=True)
 
@@ -58,7 +59,7 @@ class Purchase(models.Model):
         super().save(*args, **kwargs)
         self.product.available_stock += self.quantity
         self.product.save()
-
+    
     def __str__(self):
         return f"{self.quantity} {self.product} purchased on {self.purchase_date}"
 

@@ -54,6 +54,7 @@ urlpatterns = [
   path('export_invoice_list_csv/',export_invoice_list_csv, name='admin_export_invoice_list_csv'), 
   path('export_transaction_list_csv/',export_transaction_list_csv, name='admin_export_transaction_list_csv'), 
   path('export_transaction_list_pdf/',export_transaction_list_pdf, name='admin_export_transaction_list_pdf'), 
+  path('export_stock_details_csv/',export_stock_details_csv, name='admin_export_stock_details_csv'), 
 
   # performa Invoice Links
   path('performa_invoice_list/',performa_invoice_list, name='admin_performa_invoice_list'), 

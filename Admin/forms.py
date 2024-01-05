@@ -53,23 +53,25 @@ class DealerUpdateForm(forms.ModelForm):
 class ProductCreationForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ('product_code','product_name','description','sale_amount','gst','hsn_sac')
+        fields = ('product_code','product_name','description','sale_amount','gst','hsn_sac','minimum_stock')
         labels = { 
             'sale_amount': 'NDP Amount',
             'product_code': 'Product Code', 
             'gst': 'GST %', 
             'hsn_sac': 'HSN/SAC Code', 
+            'minimum_stock':'Minimum Stock for Alert',
         }  
         
 class ProductUpdateForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ('product_code','product_name','description','sale_amount','gst','hsn_sac')
+        fields = ('product_code','product_name','description','sale_amount','gst','hsn_sac','minimum_stock')
         labels = { 
             'sale_amount': 'NDP Amount',
             'product_code': 'Product Code', 
             'gst': 'GST %', 
             'hsn_sac': 'HSN/SAC Code', 
+            'minimum_stock':'Minimum Stock for Alert',
         }  
 
 class PurchaseCreationForm(forms.ModelForm):

@@ -65,6 +65,87 @@
     background:transparent;
     border:1px solid #376184;
 }
+
+
+
+
+.notification-area {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  z-index: 100;
+}
+.notification {
+  height: 120px;
+  width: 330px;
+  position: relative;
+  background: #fff;
+  opacity: 1;
+  border-radius: 10px;
+  margin-top: 20px;
+  -webkit-box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.75);
+  -moz-box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.75);
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.6);
+}
+.notification__icon {
+  float: left;
+  height: 40px;
+  width: 50px;
+  position: relative;
+  top: 30px;
+  left: 15px;
+  font-size: 30px;
+  color: #64963b;
+}
+.notification__exit-icon {
+  float: right;
+  height: 16px;
+  top: 10px;
+  right: 15px;
+  position: relative;
+  color: #363636;
+  cursor: pointer;
+}
+.notification__exit-icon:hover {
+  color: #747474;
+}
+.notification__content {
+  float: left;
+  height: 100px;
+  width: 230px;
+  margin: 0 7px;
+  position: relative;
+}
+.notification-title {
+  font-weight: 900;
+  font-size: 20px;
+  margin: 18px 0 0 0;
+  color: #64963b;
+  font-family: "Montserrat Alternates", sans-serif;
+}
+.notification-message {
+  font-weight: 400;
+  margin: 5px 0 0 0;
+  font-size: 14px;
+  font-family: "Montserrat Alternates", sans-serif;
+  color: #000;
+}
+@media (max-width: 600px) {
+  .notification {
+    width: calc(100% - 20px);
+  }
+  .notification-area {
+    top: auto;
+    bottom: 30px;
+    left: 10px;
+    right: 10px;
+    margin: 0;
+    max-height: 100px;
+    position: fixed;
+  }
+}
+
+  
   </style>
 
   <body>
@@ -339,7 +420,7 @@
           <footer class="footer text-center" style="text-align:center;">
             <div class="container-fluid">
               <span class="text-muted d-block text-center text-sm-start d-sm-inline-block">Copyright © DharamRaj Corporation</span><br>
-              <span class="text-muted d-block text-center text-sm-start d-sm-inline-block mt-2">Developed by : Rameshwar Pawar</span>
+              <span class="text-muted d-block text-center text-sm-start d-sm-inline-block mt-2">Developed by : <a href="https://prameshwar4378.github.io/My_Portfolio/" style="text-decoration:none;">Rameshwar Pawar</a></span>
             </div>
           </footer>
           <!-- partial -->
@@ -394,42 +475,148 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 <script>
-    {% for msg in messages %}
-        {% if msg.tags == 'success' %}
-        swal({
-          title: "Good job!",
-          text: "{{msg}}",
-          icon: "success",
-          button: "OK",
-        });
 
-        {% elif msg.tags == 'error' %}
-        swal({
-          title: "Error",
-          text: "{{msg}}",
-          icon: "error",
-          button: "OK",
-        });
-         
-        {% elif msg.tags == 'warning' %}
-        swal({
-          title: "Warning",
-          text: "{{msg}}",
-          icon: "warning",
-          button: "OK",
-        });
-         
-        {% elif msg.tags == 'info' %}
-        swal({
-          title: "Oops",
-          text: "{{msg}}",
-          icon: "info",
-          button: "OK",
-        });
-         
-        {% endif %}
-    {% endfor %}
 </script>
+<script>
+  class Notification {
+    addNotification(settings) {
+      this.type = settings.type;
+      this.title = settings.title;
+      this.message = settings.message;
 
+      let icon;
+      let divClass;
+      let textColor;
+
+      // Change the color and icon based on the notification type
+      if (this.type == "success") {
+        icon = "mdi mdi-check-all";
+        divClass = "success";
+        textColor = "yellow";
+      } else if (this.type == "error") {
+        icon = "mdi mdi-close";
+        divClass = "error";
+        textColor = "#fff";
+      } else if (this.type == "warning") {
+        icon = "mdi mdi-alert";
+        divClass = "warning";
+        textColor = "white";
+      } else if (this.type == "info") {
+        icon = "mdi mdi-information";
+        divClass = "info";
+        textColor = "#fff";
+      }
+
+      let notificationContent = `
+        <div class="notification__icon">
+          <i class="${icon}" style="color: #fff"></i>
+        </div>
+        <div class="notification__exit-icon" style="color:black; " onclick="notify.closeWindow(event)">
+          <i class="mdi mdi-window-close" style="background:white;padding:0px 3px; border-radius:50%;"></i>
+        </div>
+        <div class="notification__content">
+          <h1 class="notification-title" style="color: #fff">${this.title}</h1>
+          <p class="notification-message" style="color:${textColor}">${this.message}</p>
+        </div>`;
+
+      let notifyArea = document.createElement("div");
+      notifyArea.classList.add("notification-area");
+
+      let notification = document.createElement("div");
+      notification.classList.add("notification");
+      notification.innerHTML = notificationContent;
+
+      // Add the slide-in animation class
+      notification.classList.add("fade-in-down");
+
+      const area = document.querySelector(".notification-area");
+
+      let timer;
+
+      if (!area) {
+        document.body.appendChild(notifyArea);
+        notifyArea.appendChild(notification);
+
+        if (notification) {
+          timer = setTimeout(() => {
+            // Add the slide-out animation class before removing the notification
+            notification.classList.remove("fade-in-down");
+            notification.classList.add("fade-out-down");
+            
+            // Remove the notification after the animation duration
+            setTimeout(() => {
+              notification.remove();
+            }, 500);
+          }, 10000);
+        }
+      } else {
+        area.appendChild(notification);
+
+        if (notification) {
+          timer = setTimeout(() => {
+            // Add the slide-out animation class before removing the notification
+            notification.classList.remove("slide-in");
+            notification.classList.add("slide-out");
+
+            // Remove the notification after the animation duration
+            setTimeout(() => {
+              notification.remove();
+            }, 500);
+          }, 10000);
+        }
+      }
+    }
+
+    closeWindow(e) {
+      e.target.parentElement.parentElement.remove();
+    }
+  }
+
+  let notify = new Notification();
+ 
+  {% for msg in messages %}
+    {% if msg.tags == 'success' %}
+      notify.addNotification({
+        type: "success",
+        title: "Success!",
+        message: "{{msg.message}}"
+      }); 
+      var notificationElement = document.querySelector('.notification');
+      if (notificationElement) {
+        notificationElement.style.backgroundColor = '#3C9C29';
+      }
+    {% elif msg.tags == 'error' %}
+      notify.addNotification({
+        type: "error",
+        title: "Error!",
+        message: "{{msg.message}}"
+      });
+      var notificationElement = document.querySelector('.notification');
+      if (notificationElement) {
+        notificationElement.style.backgroundColor = '#CE3528';
+      }
+    {% elif msg.tags == 'warning' %}
+      notify.addNotification({
+        type: "warning",
+        title: "Warning!",
+        message: "{{msg.message}}"
+      });
+      var notificationElement = document.querySelector('.notification');
+      if (notificationElement) {
+        notificationElement.style.backgroundColor = '#E6A103';
+      }
+    {% elif msg.tags == 'info' %}
+      notify.addNotification({
+        type: "info",
+        title: "Info!",
+        message: "{{msg.message}}"
+      });
+      var notificationElement = document.querySelector('.notification');
+      if (notificationElement) {
+        notificationElement.style.backgroundColor = '#3486B4';
+      }
+    {% endif %}
+  {% endfor %}
+</script>
   </body>
 </html>
